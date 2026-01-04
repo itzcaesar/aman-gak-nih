@@ -1,86 +1,110 @@
-# AmanGakNih.id
+<div align="center">
 
-**AmanGakNih.id** adalah aplikasi web sederhana untuk mengecek keamanan sebuah URL/Website, dengan fokus pada deteksi phishing dan penipuan yang menargetkan pengguna Indonesia.
+# 🛡️ AmanGakNih.id
 
-## 🚀 Fitur MVP
+**Aplikasi Analisa Keamanan Website & Deteksi Phishing**
 
-1.  **Analisa Domain**: Cek umur domain (Domain baru < 30 hari ditandai berisiko).
-2.  **Cek SSL/HTTPS**: Verifikasi sertifikat SSL dan validitasnya.
-3.  **Deteksi Heuristik**: Mencari pola URL mencurigakan (typosquatting, keyword bank, dll).
-4.  **Brand Detector**: Mendeteksi jika website mencoba meniru brand populer (BCA, BRI, Google, dll) tanpa menggunakan domain resmi.
-5.  **Google Safe Browsing**: Integrasi dengan API Google untuk cek database malware/phishing.
-6.  **Skor Transparan**: Memberikan skor 0-100 dengan penjelasan detail untuk setiap sinyal.
+[![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
+[![Inertia](https://img.shields.io/badge/Inertia.js-Spawn-9553E9?style=for-the-badge&logo=inertia&logoColor=white)](https://inertiajs.com)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 
-## 🛠️ Teknologi
+*Mendeteksi website berbahaya, penipuan, dan phishing dengan heuristik cerdas dan integrasi real-time untuk pengguna Indonesia.*
 
--   **Laravel 12**
--   **Inertia.js** (Server-side Rendering SPA)
--   **React 18** (Frontend UI)
--   **Tailwind CSS v4** (Styling)
--   **Framer Motion** (Animations)
--   **MySQL** (Database)
--   **Redis** (Queue & Caching)
+</div>
 
-## 📦 Cara Install & Menjalankan
+---
 
-### Prasyarat
-- PHP 8.2+
-- Composer
-- Node.js & NPM
-- MySQL
+## 🚀 Fitur Unggulan
 
-### Langkah Instalasi
-1. Clone repository:
-   ```bash
-   git clone https://github.com/itzcaesar/aman-gak-nih.git
-   cd aman-gak-nih
-   ```
+| Fitur | Deskripsi |
+| :--- | :--- |
+| **🔍 Analisa Domain** | Memeriksa umur domain. Domain baru (< 30 hari) ditandai sebagai berisiko tinggi. |
+| **🔒 Cek SSL/HTTPS** | Verifikasi sertifikat SSL dan memastikan koneksi terenkripsi. |
+| **🧠 Deteksi Heuristik** | Mendeteksi pola URL mencurigakan seperti *typosquatting* atau penggunaan *keyword bank*. |
+| **🏢 Brand Detector** | Mengenali percobaan peniruan brand besar (BCA, BRI, Google, dll) pada domain non-resmi. |
+| **🛡️ Google Safe Browsing** | Integrasi API Google untuk mencocokkan URL dengan database malware/phishing global. |
+| **📊 Skor Transparan** | Memberikan skor risiko **0-100** dengan penjelasan detail untuk setiap sinyal yang ditemukan. |
 
-2. Install dependencies (Backend & Frontend):
-   ```bash
-   composer install
-   npm install
-   ```
+## 🛠️ Teknologi Utama
 
-3. Setup `.env`:
-   ```bash
-   copy .env.example .env
-   # Edit database credentials
-   # Tambahkan GOOGLE_SAFE_BROWSING_KEY jika punya
-   ```
+-   **Backend**: Laravel 12 (PHP 8.2+)
+-   **Frontend**: React 18, Inertia.js
+-   **Styling**: Tailwind CSS v4, Framer Motion
+-   **Database**: MySQL, Redis
 
-4. Generate Key & Migrate:
-   ```bash
-   php artisan key:generate
-   php artisan migrate --seed
-   ```
+## 📦 Panduan Instalasi
 
-5. Jalankan Service (Gunakan `start.bat` untuk Windows untuk menjalankan semua sekaligus):
-   ```bash
-   ./start.bat
-   ```
-   
-   Atau jalankan manual:
-   ```bash
-   php artisan serve
-   php artisan queue:work
-   npm run dev
-   ```
+Ikuti langkah berikut untuk menjalankan aplikasi di komputer lokal Anda:
 
-## ⚖️ Logika Scoring
+### 1. Download Source Code
+```bash
+git clone https://github.com/itzcaesar/aman-gak-nih.git
+cd aman-gak-nih
+```
 
-Sistem menggunakan **Base Score 60**. 
--   **Sinyal Positif** (SSL Valid, Domain Tua, Safe Browsing Clean) menambah skor.
--   **Sinyal Negatif** (No HTTPS, Domain Baru, Keyword Phishing, Impersonasi) mengurangi skor.
+### 2. Install Dependencies
+Pastikan **Composer**, **PHP**, dan **Node.js** sudah terinstall.
+```bash
+composer install
+npm install
+```
 
-**Level Risiko:**
--   **0 - 39**: ❌ **Berbahaya**
--   **40 - 69**: ⚠️ **Mencurigakan**
--   **70 - 100**: ✅ **Relatif Aman**
+### 3. Konfigurasi Environment
+Salin file `.env` dan atur koneksi database Anda.
+```bash
+copy .env.example .env
+```
+> **Tip**: Tambahkan `GOOGLE_SAFE_BROWSING_KEY` di .env untuk hasil scan yang lebih akurat.
+
+### 4. Setup Database
+Generate app key dan jalankan migrasi database serta seeder.
+```bash
+php artisan key:generate
+php artisan migrate --seed
+```
+
+### 5. Jalankan Aplikasi ⚡
+Untuk kemudahan, gunakan script `start.bat` yang akan menjalankan Laravel Serve, Queue Worker, dan Vite sekaligus.
+
+```bash
+./start.bat
+```
+
+Atau jalankan secara manual di terminal terpisah:
+```bash
+# Terminal 1
+php artisan serve
+
+# Terminal 2
+php artisan queue:work
+
+# Terminal 3
+npm run dev
+```
+
+---
+
+## ⚖️ Sistem Scoring
+
+Sistem menggunakan **Base Score 60** yang akan bertambah atau berkurang berdasarkan sinyal:
+
+<div align="center">
+
+| Skor | Level Risiko | Indikator |
+| :---: | :--- | :--- |
+| **0 - 39** | ❌ **BERBAHAYA** | Domain curian, malware terdeteksi, atau impersonasi brand. |
+| **40 - 69** | ⚠️ **MENCURIGAKAN** | Domain baru, tidak ada SSL, atau pola URL aneh. |
+| **70 - 100** | ✅ **RELATIF AMAN** | Domain tua, SSL valid, dan tidak ada sinyal negatif. |
+
+</div>
 
 ## 📝 Disclaimer
 
-Aplikasi ini menggunakan metode heuristik dan database publik untuk estimasi keamanan. **Hasil tidak dijamin 100% akurat.** Selalu gunakan penilaian pribadi sebelum memasukkan data sensitif.
+Aplikasi ini menggunakan metode heuristik dan database publik untuk estimasi keamanan. **Hasil tidak dijamin 100% akurat.** Selalu gunakan penilaian pribadi dan kewaspadaan ekstra sebelum memasukkan data sensitif di internet.
 
 ---
-Dibuat dengan ❤️ untuk Indonesia yang lebih aman.
+
+<div align="center">
+    <p>Dibuat dengan ❤️ untuk Internet Indonesia yang lebih aman.</p>
+</div>
