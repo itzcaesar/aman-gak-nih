@@ -43,6 +43,8 @@ class RunWebsiteScanJob implements ShouldQueue
         BrandDetector $brandDetector,
         \App\Services\Analyzers\GoogleSafeBrowsingAnalyzer $gsbAnalyzer
     ): void {
+        echo " [x] Processing Scan ID: {$this->scanId} \n";
+        Log::info("Job started for Scan ID: {$this->scanId}");
         $scan = Scan::find($this->scanId);
 
         if (!$scan) {

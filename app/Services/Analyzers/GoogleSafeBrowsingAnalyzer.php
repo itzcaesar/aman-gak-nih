@@ -28,7 +28,7 @@ class GoogleSafeBrowsingAnalyzer implements AnalyzerInterface
 
             $payload = [
                 'client' => [
-                    'clientId' => 'amangaknih-scanner',
+                    'clientId' => 'aman-gak-nih',
                     'clientVersion' => '1.0.0'
                 ],
                 'threatInfo' => [

@@ -13,18 +13,21 @@
 
 ## 🛠️ Teknologi
 
--   **Laravel 11**
+-   **Laravel 12**
+-   **Inertia.js** (Server-side Rendering SPA)
+-   **React 18** (Frontend UI)
+-   **Tailwind CSS v4** (Styling)
+-   **Framer Motion** (Animations)
 -   **MySQL** (Database)
 -   **Redis** (Queue & Caching)
--   **Vanilla CSS** (Premium Dark Theme + Glassmorphism)
 
 ## 📦 Cara Install & Menjalankan
 
 ### Prasyarat
 - PHP 8.2+
 - Composer
+- Node.js & NPM
 - MySQL
-- Redis Server
 
 ### Langkah Instalasi
 1. Clone repository:
@@ -33,9 +36,10 @@
    cd aman-gak-nih
    ```
 
-2. Install dependencies:
+2. Install dependencies (Backend & Frontend):
    ```bash
    composer install
+   npm install
    ```
 
 3. Setup `.env`:
@@ -51,10 +55,16 @@
    php artisan migrate --seed
    ```
 
-5. Jalankan Service (Gunakan `start.bat` untuk Windows):
+5. Jalankan Service (Gunakan `start.bat` untuk Windows untuk menjalankan semua sekaligus):
+   ```bash
+   ./start.bat
+   ```
+   
+   Atau jalankan manual:
    ```bash
    php artisan serve
    php artisan queue:work
+   npm run dev
    ```
 
 ## ⚖️ Logika Scoring
