@@ -57,7 +57,7 @@ class ScanController extends Controller
             'status' => 'pending'
         ]);
 
-        \Illuminate\Support\Facades\Log::info("Dispatching scan ID: {$scan->id}");
+        // Dispatch scan job
         RunWebsiteScanJob::dispatch($scan->id);
 
         return to_route('scan.show', $scan);
@@ -68,8 +68,6 @@ class ScanController extends Controller
         // Ensure we have the freshest data from DB
         $scan->refresh();
         $scan->load('signals');
-
-        \Illuminate\Support\Facades\Log::info("Returning Scan ID: {$scan->id} Status: {$scan->status}");
 
         return Inertia::render('Results', [
             'scan' => $scan // Inertia handles model serialization automatically
