@@ -5,41 +5,44 @@ namespace App\Services;
 class UrlNormalizer
 {
     /**
-     * Normalize the given URL.
+     * Normalize the URL for consistent scanning.
      *
      * @param string $url
      * @return string
+     * @throws \InvalidArgumentException
      */
     public function normalize(string $url): string
     {
         $url = trim($url);
 
-        // Add scheme if missing
+        // Basic scheme check
         if (!preg_match('#^https?://#i', $url)) {
-            $url = 'http://' . $url;
+            $url = 'https://' . $url;
         }
 
-        // Parse URL
         $parsed = parse_url($url);
-        
-        if (!isset($parsed['host'])) {
-            throw new \InvalidArgumentException("Invalid URL: Host not found");
+
+        if (!$parsed || !isset($parsed['host'])) {
+            throw new \InvalidArgumentException('URL tidak valid.');
         }
 
-        // Lowercase host
-        $parsed['host'] = strtolower($parsed['host']);
+        $host = strtolower($parsed['host']);
 
-        // Remove www. from host potentially (optional, but good for standardization)
-        // $parsed['host'] = preg_replace('/^www\./', '', $parsed['host']);
+        // Reject IP addresses (IPv4)
+        if (filter_var($host, FILTER_VALIDATE_IP)) {
+            throw new \InvalidArgumentException('Scan IP address tidak didukung via web ini.');
+        }
 
-        // Reconstruct URL
-        $scheme = isset($parsed['scheme']) ? $parsed['scheme'] . '://' : 'http://';
-        $host = $parsed['host'];
-        $port = isset($parsed['port']) ? ':' . $parsed['port'] : '';
-        $path = isset($parsed['path']) ? $parsed['path'] : '/';
+        // Reject localhost/private
+        if ($host === 'localhost' || $host === '127.0.0.1' || str_ends_with($host, '.local') || $host === '::1') {
+            throw new \InvalidArgumentException('Localhost tidak dapat discan.');
+        }
+
+        // Rebuild URL to ensure clean format
+        $scheme = isset($parsed['scheme']) ? strtolower($parsed['scheme']) : 'https';
+        $path = $parsed['path'] ?? '/';
         $query = isset($parsed['query']) ? '?' . $parsed['query'] : '';
-        $fragment = isset($parsed['fragment']) ? '#' . $parsed['fragment'] : '';
 
-        return $scheme . $host . $port . $path . $query . $fragment;
+        return "{$scheme}://{$host}{$path}{$query}";
     }
 }

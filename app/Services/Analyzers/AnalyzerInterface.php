@@ -7,15 +7,15 @@ use App\Models\Scan;
 interface AnalyzerInterface
 {
     /**
-     * Run the analyzer on the given scan.
+     * Analyze the given scan/URL and return a list of signals.
      *
      * @param Scan $scan
-     * @return array List of signals found (type, weight, impact, description)
+     * @return array Array of signal data [['type' => ..., 'weight' => ..., 'impact' => ..., 'description' => ...]]
      */
     public function analyze(Scan $scan): array;
 
     /**
-     * Get the name of the analyzer.
+     * Get the name/identifier of the analyzer.
      */
     public function name(): string;
 }
