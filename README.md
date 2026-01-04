@@ -105,6 +105,3 @@ Aplikasi ini menggunakan metode heuristik dan database publik untuk estimasi kea
 
 ---
 
-<div align="center">
-    <p>Dibuat dengan ❤️ untuk Internet Indonesia yang lebih aman.</p>
-</div>
