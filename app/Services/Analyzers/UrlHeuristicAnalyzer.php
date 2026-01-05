@@ -119,8 +119,7 @@ class UrlHeuristicAnalyzer implements AnalyzerInterface
         }
 
         // 6. IP check in host (if missed by normalizer or obfuscated as hex/octal - regex basic check)
-        // Normalizer handles standard IP, but maybe some hex tricks. 
-        // For MVP, we stick to standard checks.
+        // Apply for later, males soalnya :v.
 
         return $signals;
     }
