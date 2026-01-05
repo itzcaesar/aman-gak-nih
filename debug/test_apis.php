@@ -22,6 +22,7 @@ if (!$vtKey && !$gsbKey) {
 if ($vtKey) {
     echo "\n--- Testing VirusTotal API ---\n";
     try {
+        /** @var \Illuminate\Http\Client\Response $response */
         $response = Http::withHeaders(['x-apikey' => $vtKey])
             ->withoutVerifying()
             ->get("https://www.virustotal.com/api/v3/domains/google.com");
@@ -51,6 +52,7 @@ if ($gsbKey) {
             ]
         ];
 
+        /** @var \Illuminate\Http\Client\Response $response */
         $response = Http::withoutVerifying()->post($endpoint, $payload);
         echo "Status: " . $response->status() . "\n";
         if ($response->successful()) {
@@ -71,6 +73,7 @@ if (!$apiNinjaKey) {
     echo "ERROR: API_NINJA_KEY missing. Please add it to .env\n";
 } else {
     try {
+        /** @var \Illuminate\Http\Client\Response $response */
         $response = Http::withoutVerifying()
             ->withHeaders(['X-Api-Key' => $apiNinjaKey])
             ->timeout(10)
