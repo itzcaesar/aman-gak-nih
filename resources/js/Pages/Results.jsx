@@ -43,23 +43,15 @@ export default function Results({ scan }) {
     const positiveSignals = scan.signals.filter(s => s.impact === 'positive').length;
     const negativeSignals = scan.signals.filter(s => ['critical', 'warning'].includes(s.impact)).length;
 
-    // Correctly finding VT data - checking multiple potential types just in case
+    // Correctly finding VT data - prioritizing signals that have actual data
     const vtUrlSignal = scan.signals.find(s => s.type.includes('vt_url'));
-    const vtDomainSignal = scan.signals.find(s => s.type.includes('domain') || s.type.includes('whois'));
+
+    const domainSignals = scan.signals.filter(s => s.type.includes('domain') || s.type.includes('whois'));
+    // Prioritize a signal that actually has creation_date (e.g. from VT or API Ninja if successful)
+    // Fallback to the first one found if none have data
+    const vtDomainSignal = domainSignals.find(s => s.meta_data && s.meta_data.creation_date) || domainSignals[0];
 
     // Fallback emptiness
-    const vtData = vtUrlSignal?.meta_data || {};
-    const vendors = vtData.vendors || {};
-    const httpInfo = vtData.http_response || {};
-    const htmlInfo = vtData.html_info || {};
-    const votes = vtData.votes || {};
-    const submission = vtData.submission || {};
-
-    // GSB Data
-    const gsbSignal = scan.signals.find(s => s.type.includes('google_safe_browsing'));
-    const gsbData = gsbSignal?.meta_data || {};
-    const gsbThreats = gsbData.checked_threat_types || [];
-
     const domainData = vtUrlSignal?.meta_data?.domain_info || vtDomainSignal?.meta_data || {};
     const dnsRecords = domainData.last_dns_records || [];
     const sslCert = domainData.last_https_certificate || null;
@@ -68,6 +60,24 @@ export default function Results({ scan }) {
     const whoisData = domainData.whois || null;
     const registrar = domainData.registrar || null;
     const creationDate = domainData.creation_date || null;
+
+    // Fallback emptiness
+    const vtData = vtUrlSignal?.meta_data || {};
+    const vendors = vtData.vendors || {};
+    const httpInfo = vtData.http_response || {};
+    const htmlInfo = vtData.html_info || {};
+
+    // Use URL votes if available, otherwise domain votes (often URL specific votes are 0)
+    const votes = (vtData.votes && (vtData.votes.harmless > 0 || vtData.votes.malicious > 0))
+        ? vtData.votes
+        : (domainData.votes || vtData.votes || {});
+
+    const submission = vtData.submission || {};
+
+    // GSB Data
+    const gsbSignal = scan.signals.find(s => s.type.includes('google_safe_browsing'));
+    const gsbData = gsbSignal?.meta_data || {};
+    const gsbThreats = gsbData.checked_threat_types || [];
 
     // Trust Score Gauge
     let gaugeColor = "text-red-500";

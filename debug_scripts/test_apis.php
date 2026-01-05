@@ -63,3 +63,29 @@ if ($gsbKey) {
         echo "Exception: " . $e->getMessage() . "\n";
     }
 }
+
+echo "\n--- Testing API Ninja WHOIS ---\n";
+$apiNinjaKey = env('API_NINJA_KEY');
+
+if (!$apiNinjaKey) {
+    echo "ERROR: API_NINJA_KEY missing. Please add it to .env\n";
+} else {
+    try {
+        $response = Http::withoutVerifying()
+            ->withHeaders(['X-Api-Key' => $apiNinjaKey])
+            ->timeout(10)
+            ->get("https://api.api-ninjas.com/v1/whois?domain=google.com");
+
+        echo "Status: " . $response->status() . "\n";
+        if ($response->successful()) {
+            $data = $response->json();
+            echo "Success! API Ninja is working.\n";
+            echo "Registrar: " . ($data['registrar'] ?? 'Unknown') . "\n";
+            echo "Creation Date: " . (is_array($data['creation_date'] ?? null) ? $data['creation_date'][0] : ($data['creation_date'] ?? 'Unknown')) . "\n";
+        } else {
+            echo "Failed! Body: " . substr($response->body(), 0, 200) . "...\n";
+        }
+    } catch (\Exception $e) {
+        echo "Exception: " . $e->getMessage() . "\n";
+    }
+}

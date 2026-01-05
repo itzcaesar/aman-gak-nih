@@ -3,9 +3,10 @@
 namespace App\Services\Analyzers;
 
 use App\Models\Scan;
+
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Iodev\Whois\Factory;
+
 
 class DomainAnalyzer implements AnalyzerInterface
 {
@@ -40,45 +41,43 @@ class DomainAnalyzer implements AnalyzerInterface
         $creationDate = null;
         $registrar = null;
 
-        // Method 1: API Ninja WHOIS (Primary - more reliable)
+        // API Ninja WHOIS (Exclusive Source)
         $apiNinjaKey = env('API_NINJA_KEY');
-        if ($apiNinjaKey) {
-            try {
-                $response = Http::withoutVerifying()
-                    ->withHeaders(['X-Api-Key' => $apiNinjaKey])
-                    ->timeout(10)
-                    ->get("https://api.api-ninjas.com/v1/whois?domain={$domain}");
 
-                if ($response->successful()) {
-                    $data = $response->json();
-
-                    // API Ninja returns creation_date as Unix timestamp or array
-                    if (isset($data['creation_date'])) {
-                        $cd = $data['creation_date'];
-                        $creationDate = is_array($cd) ? $cd[0] : $cd;
-                    }
-
-                    if (isset($data['registrar'])) {
-                        $registrar = is_array($data['registrar']) ? $data['registrar'][0] : $data['registrar'];
-                    }
-                }
-            } catch (\Exception $e) {
-                Log::warning("API Ninja WHOIS failed for {$domain}: " . $e->getMessage());
-            }
+        if (!$apiNinjaKey) {
+            Log::warning("API_NINJA_KEY is missing. Domain age check skipped.");
+            $signals[] = [
+                'type' => 'whois_unknown',
+                'weight' => 0,
+                'impact' => 'info',
+                'description' => 'Konfigurasi server belum lengkap (API Key WHOIS hilang).'
+            ];
+            return $signals;
         }
 
-        // Method 2: php-whois library (Fallback)
-        if (!$creationDate) {
-            try {
-                $whois = Factory::get()->createWhois();
-                $info = $whois->loadDomainInfo($domain);
+        try {
+            $response = Http::withoutVerifying()
+                ->withHeaders(['X-Api-Key' => $apiNinjaKey])
+                ->timeout(10)
+                ->get("https://api.api-ninjas.com/v1/whois?domain={$domain}");
 
-                if ($info && $info->creationDate) {
-                    $creationDate = $info->creationDate;
+            if ($response->successful()) {
+                $data = $response->json();
+
+                // API Ninja returns creation_date as Unix timestamp or array
+                if (isset($data['creation_date'])) {
+                    $cd = $data['creation_date'];
+                    $creationDate = is_array($cd) ? $cd[0] : $cd;
                 }
-            } catch (\Exception $e) {
-                Log::warning("php-whois failed for {$domain}: " . $e->getMessage());
+
+                if (isset($data['registrar'])) {
+                    $registrar = is_array($data['registrar']) ? $data['registrar'][0] : $data['registrar'];
+                }
+            } else {
+                Log::warning("API Ninja WHOIS error for {$domain}: " . $response->body());
             }
+        } catch (\Exception $e) {
+            Log::warning("API Ninja WHOIS failed for {$domain}: " . $e->getMessage());
         }
 
         // Generate signals based on domain age
@@ -117,7 +116,7 @@ class DomainAnalyzer implements AnalyzerInterface
                 'type' => 'whois_unknown',
                 'weight' => 0,
                 'impact' => 'info',
-                'description' => 'Data WHOIS tidak tersedia (Privacy Protected atau TLD tidak didukung).'
+                'description' => 'Data WHOIS tidak tersedia (Gagal menghubungi API atau Privacy Protected).'
             ];
         }
 

@@ -87,7 +87,8 @@ class RunWebsiteScanJob implements ShouldQueue
                             'type' => $result['type'],
                             'weight' => $result['weight'],
                             'impact' => $result['impact'],
-                            'description' => $result['description']
+                            'description' => $result['description'],
+                            'meta_data' => $result['meta_data'] ?? null
                         ]);
                     }
 

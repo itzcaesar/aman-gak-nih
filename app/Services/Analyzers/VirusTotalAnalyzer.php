@@ -80,6 +80,7 @@ class VirusTotalAnalyzer implements AnalyzerInterface
                     'registrar' => $data['registrar'] ?? null,
                     'popularity_ranks' => $data['popularity_ranks'] ?? [],
                     'last_analysis_date' => $data['last_analysis_date'] ?? null,
+                    'votes' => $data['total_votes'] ?? [],
                 ];
 
                 $signal = null;
