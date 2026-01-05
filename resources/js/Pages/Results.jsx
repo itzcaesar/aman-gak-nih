@@ -1,11 +1,75 @@
-import React, { useEffect, useState } from 'react';
-import { usePage, router, Link } from '@inertiajs/react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { Link, router } from '@inertiajs/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import MatrixRain from '../Components/MatrixRain';
+
+// Helper to extract detailed reasoning from signal
+const getSignalReasoning = (signal) => {
+    const meta = signal.meta_data || {};
+    const details = [];
+
+    // VirusTotal Domain/URL
+    if (signal.type.includes('vt_')) {
+        const stats = meta.stats || {};
+        if (stats.malicious > 0) details.push({ label: 'Malicious Vendors', value: stats.malicious, alert: true });
+        if (stats.suspicious > 0) details.push({ label: 'Suspicious Vendors', value: stats.suspicious, alert: true });
+        if (meta.categories && Object.keys(meta.categories).length > 0) {
+            details.push({ label: 'Categories', value: Object.values(meta.categories).join(', ').slice(0, 50) + (Object.values(meta.categories).length > 3 ? '...' : '') });
+        }
+        if (meta.votes) {
+            const communityScore = (meta.votes.harmless || 0) - (meta.votes.malicious || 0);
+            details.push({ label: 'Community Score', value: communityScore > 0 ? `+${communityScore}` : communityScore });
+        }
+    }
+
+    // Google Safe Browsing
+    if (signal.type.includes('google_safe_browsing')) {
+        details.push({ label: 'Platform', value: 'Google Transparency Report' });
+        details.push({ label: 'Threat Types', value: meta.checked_threat_types ? meta.checked_threat_types.length : 'All Standard' });
+        if (signal.impact === 'positive') details.push({ label: 'Status', value: 'Verified Safe' });
+    }
+
+    // Domain / Whois
+    if (signal.type.includes('domain') || signal.type.includes('whois')) {
+        if (meta.creation_date) {
+            const date = new Date(meta.creation_date * 1000);
+            details.push({ label: 'Registered On', value: date.toLocaleDateString() });
+            // Calculate relative time roughly
+            const years = ((new Date() - date) / (1000 * 60 * 60 * 24 * 365)).toFixed(1);
+            details.push({ label: 'Domain Age', value: `${years} Years` });
+        }
+        if (meta.registrar) details.push({ label: 'Registrar', value: meta.registrar });
+    }
+
+    // SSL
+    if (signal.type.includes('ssl')) {
+        if (meta.issuer) details.push({ label: 'Issuer', value: meta.issuer.O || meta.issuer.CN });
+        if (meta.validity) {
+            details.push({ label: 'Expires', value: meta.validity.not_after });
+        }
+        if (meta.protocol) details.push({ label: 'Protocol', value: meta.protocol });
+    }
+
+    // Page Inspector
+    if (signal.type.includes('page') || signal.type.includes('html')) {
+        if (meta.title) details.push({ label: 'Page Title', value: meta.title });
+        if (meta.server) details.push({ label: 'Server', value: meta.server });
+    }
+
+    // Fallback if details are empty but it's a positive signal
+    if (details.length === 0 && signal.impact === 'positive') {
+        details.push({ label: 'Verification', value: 'Passed automated checks' });
+    }
+
+    return details;
+};
+
 
 export default function Results({ scan }) {
     const [activeTab, setActiveTab] = useState('overview');
     const [vtTab, setVtTab] = useState('detection');
+    const [hoveredSignal, setHoveredSignal] = useState(null);
+
 
     // Auto-refresh mechanism for pending scans
     useEffect(() => {
@@ -21,7 +85,7 @@ export default function Results({ scan }) {
     }, [scan.status]);
 
     // Loading View
-    if (scan.status !== 'completed' && scan.status !== 'failed') {
+    if (scan.status === 'processing' || scan.status === 'pending') {
         return (
             <div className="min-h-screen bg-[#0a0a0a] text-white font-sans flex flex-col items-center justify-center relative overflow-hidden">
                 <MatrixRain />
@@ -39,6 +103,35 @@ export default function Results({ scan }) {
             </div>
         );
     }
+
+    // Failed View
+    if (scan.status === 'failed') {
+        return (
+            <div className="min-h-screen bg-[#0a0a0a] text-white font-sans flex flex-col items-center justify-center relative overflow-hidden">
+                <MatrixRain />
+                <div className="relative z-10 text-center px-4 max-w-lg">
+                    <div className="w-24 h-24 mx-auto mb-6 bg-red-900/20 rounded-full flex items-center justify-center border border-red-500/50 shadow-[0_0_30px_rgba(239,68,68,0.3)]">
+                        <span className="text-5xl">⚠️</span>
+                    </div>
+                    <h2 className="text-3xl font-bold text-red-500 mb-4 tracking-widest uppercase font-mono">Scan Termination</h2>
+                    <div className="bg-black/80 backdrop-blur border border-red-900/50 p-6 mb-8 text-left">
+                        <p className="text-gray-400 font-mono text-sm mb-4">
+                            CRITICAL ERROR: The automated reconnaissance process encountered an unrecoverable exception.
+                        </p>
+                        <ul className="text-xs text-red-400 font-mono list-disc list-inside space-y-2">
+                            <li>Target host may be unreachable or offline.</li>
+                            <li>External intelligence feeds timed out.</li>
+                            <li>Internal processing error (Code: 0xDEADBEEF).</li>
+                        </ul>
+                    </div>
+                    <Link href="/" className="px-8 py-3 bg-red-600 hover:bg-red-700 text-black font-bold uppercase tracking-wider transition-all font-mono">
+                        Initiate New Scan
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
 
     // Analysis Data
     const host = new URL(scan.normalized_url).hostname;
@@ -345,7 +438,49 @@ export default function Results({ scan }) {
                             {/* Content Area */}
                             <div className="min-h-[400px]">
                                 {activeTab === 'overview' && (
-                                    <div className="space-y-3">
+                                    <div className="space-y-3 relative">
+                                        {/* Tooltip Overlay */}
+                                        <AnimatePresence>
+                                            {hoveredSignal && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, scale: 0.95, x: 20 }}
+                                                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                                                    exit={{ opacity: 0, scale: 0.95, x: 10 }}
+                                                    transition={{ duration: 0.15 }}
+                                                    className="absolute z-50 right-0 top-0 w-72 pointer-events-none hidden lg:block"
+                                                    style={{ transform: 'translateX(105%)' }}
+                                                >
+                                                    <div className="bg-black/90 backdrop-blur-xl border border-blue-500/30 p-4 shadow-[0_0_30px_rgba(0,0,0,0.8)] relative overflow-hidden">
+                                                        {/* Decorative corners */}
+                                                        <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-blue-400"></div>
+                                                        <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-blue-400"></div>
+
+                                                        <h4 className="text-white text-[10px] uppercase font-bold tracking-widest mb-3 border-b border-white/10 pb-2 font-mono flex items-center gap-2">
+                                                            <span className="text-blue-500">◈</span> Analysis Reasoning
+                                                        </h4>
+
+                                                        <div className="space-y-3">
+                                                            {getSignalReasoning(hoveredSignal).map((detail, idx) => (
+                                                                <div key={idx} className="flex justify-between items-start text-[10px] font-mono border-b border-dashed border-white/5 pb-1 last:border-0">
+                                                                    <span className="text-gray-500 uppercase">{detail.label}</span>
+                                                                    <span className={`font-bold text-right max-w-[120px] break-words ${detail.alert ? 'text-red-400' : 'text-blue-300'}`}>
+                                                                        {detail.value}
+                                                                    </span>
+                                                                </div>
+                                                            ))}
+                                                            {getSignalReasoning(hoveredSignal).length === 0 && (
+                                                                <p className="text-gray-600 italic text-[10px]">No additional metadata available.</p>
+                                                            )}
+                                                        </div>
+
+                                                        <div className="mt-4 pt-2 border-t border-white/10 text-[9px] text-gray-600 font-mono uppercase">
+                                                            ID: {hoveredSignal.id || 'SIG-000'} // W: {hoveredSignal.weight}
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+
                                         {scan.signals.length === 0 ? (
                                             <div className="p-12 text-center text-gray-500 border border-dashed border-white/10 font-mono text-sm">NO SIGNALS DETECTED</div>
                                         ) : (
@@ -355,22 +490,29 @@ export default function Results({ scan }) {
                                                     initial={{ opacity: 0, x: -10 }}
                                                     animate={{ opacity: 1, x: 0 }}
                                                     transition={{ delay: idx * 0.05 }}
-                                                    className={`group hover:bg-blue-900/20 transition-all p-4 border-l-2 backdrop-blur-md ${signal.impact === 'critical' ? 'border-l-red-500 bg-black/80 border border-red-500/30' :
+                                                    onMouseEnter={() => setHoveredSignal(signal)}
+                                                    onMouseLeave={() => setHoveredSignal(null)}
+                                                    className={`group hover:bg-blue-900/20 hover:scale-[1.01] hover:shadow-[0_0_15px_rgba(37,99,235,0.1)] cursor-help transition-all p-4 border-l-2 backdrop-blur-md relative ${signal.impact === 'critical' ? 'border-l-red-500 bg-black/80 border border-red-500/30' :
                                                         signal.impact === 'warning' ? 'border-l-yellow-500 bg-black/80 border border-yellow-500/30' :
                                                             signal.impact === 'positive' ? 'border-l-green-500 bg-black/80 border border-green-500/30' :
                                                                 'border-l-gray-600 bg-black/80 border border-white/10'
                                                         }`}
                                                 >
                                                     <div className="flex justify-between items-start">
-                                                        <div>
-                                                            <div className="flex items-center gap-3 mb-2">
-                                                                <h4 className="text-white font-bold text-xs tracking-wide uppercase font-mono">{signal.type.replace(/_/g, ' ')}</h4>
-                                                                <span className={`text-[9px] font-bold px-1.5 py-0.5 border font-mono uppercase ${signal.impact === 'critical' ? 'text-red-500 border-red-500/30' :
-                                                                    signal.impact === 'positive' ? 'text-green-500 border-green-500/30' :
-                                                                        'text-gray-500 border-gray-600/30'
-                                                                    }`}>{signal.impact}</span>
+                                                        <div className="w-full">
+                                                            <div className="flex items-center justify-between mb-2">
+                                                                <div className="flex items-center gap-3">
+                                                                    <h4 className="text-white font-bold text-xs tracking-wide uppercase font-mono group-hover:text-blue-400 transition-colors">{signal.type.replace(/_/g, ' ')}</h4>
+                                                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 border font-mono uppercase ${signal.impact === 'critical' ? 'text-red-500 border-red-500/30' :
+                                                                        signal.impact === 'positive' ? 'text-green-500 border-green-500/30' :
+                                                                            'text-gray-500 border-gray-600/30'
+                                                                        }`}>{signal.impact}</span>
+                                                                </div>
+                                                                <span className="text-[10px] text-gray-600 font-mono opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    [DETAILS]
+                                                                </span>
                                                             </div>
-                                                            <p className="text-gray-400 text-xs leading-relaxed font-mono">{signal.description}</p>
+                                                            <p className="text-gray-400 text-xs leading-relaxed font-mono group-hover:text-gray-300 transition-colors">{signal.description}</p>
                                                         </div>
                                                     </div>
                                                 </motion.div>

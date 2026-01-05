@@ -57,7 +57,9 @@ Salin file `.env` dan atur koneksi database Anda.
 ```bash
 copy .env.example .env
 ```
-> **Tip**: Tambahkan `GOOGLE_SAFE_BROWSING_KEY` di .env untuk hasil scan yang lebih akurat.
+> **Tip**: Tambahkan keys berikut di .env untuk hasil scan yang lebih akurat:
+> - `GOOGLE_SAFE_BROWSING_KEY`
+> - `VIRUSTOTAL_API_KEY`
 
 ### 4. Setup Database
 Generate app key dan jalankan migrasi database serta seeder.
