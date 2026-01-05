@@ -23,72 +23,162 @@ class VirusTotalAnalyzer implements AnalyzerInterface
 
         $url = $scan->normalized_url;
         $signals = [];
+        $host = parse_url($url, PHP_URL_HOST);
 
-        // Cache Key (important for API limits)
-        $cacheKey = 'vt_scan_' . md5($url);
-
-        // Try to get from cache first (12 hours cache)
-        $cachedResult = Cache::get($cacheKey);
-
-        if ($cachedResult) {
-            return $cachedResult;
+        // 1. DOMAIN CHECK (Reputation & Categories)
+        $domainSignal = $this->checkDomain($host, $key);
+        if ($domainSignal) {
+            $signals[] = $domainSignal;
         }
 
-        try {
-            // VirusTotal uses URL identifiers (base64 encoded without padding)
-            $urlId = rtrim(base64_encode($url), '=');
-
-            /** @var \Illuminate\Http\Client\Response $response */
-            $response = Http::withHeaders([
-                'x-apikey' => $key
-            ])->timeout(10)->get("https://www.virustotal.com/api/v3/urls/{$urlId}");
-
-            if ($response->successful()) {
-                $data = $response->json()['data']['attributes']['last_analysis_stats'] ?? null;
-
-                if ($data) {
-                    $malicious = $data['malicious'] ?? 0;
-                    $suspicious = $data['suspicious'] ?? 0;
-                    $harmless = $data['harmless'] ?? 0;
-
-                    if ($malicious > 0) {
-                        $signals[] = [
-                            'type' => 'virustotal_malicious',
-                            'weight' => -100, // Maximum Penalty
-                            'impact' => 'critical',
-                            'description' => "Dikonfirmasi BERBAHAYA oleh {$malicious} vendor keamanan di VirusTotal."
-                        ];
-                    } elseif ($suspicious > 1) {
-                        $signals[] = [
-                            'type' => 'virustotal_suspicious',
-                            'weight' => -40,
-                            'impact' => 'warning',
-                            'description' => "Ditandai mencurigakan oleh {$suspicious} vendor keamanan di VirusTotal."
-                        ];
-                    } else {
-                        $signals[] = [
-                            'type' => 'virustotal_clean',
-                            'weight' => 20,
-                            'impact' => 'positive',
-                            'description' => "Dinyatakan bersih oleh {$harmless} vendor keamanan global (VirusTotal)."
-                        ];
-                    }
-
-                    // Cache the result signals
-                    Cache::put($cacheKey, $signals, 43200); // 12 Hours
-                }
-            } elseif ($response->status() === 404) {
-                // URL not in VT database yet.
-                // We could submit it using POST /urls, but for MVP let's just skip to avoid wait times.
-                // Or we can return a neutral signal.
-            } else {
-                Log::warning('VirusTotal API Error: ' . $response->status());
-            }
-
-        } catch (\Exception $e) {
-            Log::error('VirusTotal Scan Failed: ' . $e->getMessage());
+        // 2. URL CHECK (Specific path)
+        $urlSignal = $this->checkUrl($url, $key);
+        if ($urlSignal) {
+            $signals[] = $urlSignal;
         }
 
         return $signals;
+    }
+
+    private function checkDomain(string $domain, string $key): ?array
+    {
+        $cacheKey = 'vt_domain_' . md5($domain);
+        $cached = Cache::get($cacheKey);
+        if ($cached)
+            return $cached;
+
+        try {
+            /** @var \Illuminate\Http\Client\Response $response */
+            $response = Http::withHeaders(['x-apikey' => $key])
+                ->timeout(10)
+                ->get("https://www.virustotal.com/api/v3/domains/{$domain}");
+
+            if ($response->successful()) {
+                $data = $response->json()['data']['attributes'] ?? null;
+                if (!$data)
+                    return null;
+
+                $stats = $data['last_analysis_stats'];
+                $malicious = $stats['malicious'] ?? 0;
+                $categories = $data['categories'] ?? [];
+
+                $signal = null;
+                if ($malicious > 0) {
+                    $signal = [
+                        'type' => 'vt_domain_malicious',
+                        'weight' => -100,
+                        'impact' => 'critical',
+                        'description' => "Domain ini ({$domain}) ditandai BERBAHAYA oleh {$malicious} vendor keamanan.",
+                        'meta_data' => [
+                            'source' => 'VirusTotal Domain',
+                            'stats' => $stats,
+                            'categories' => $categories
+                        ]
+                    ];
+                } elseif (($stats['suspicious'] ?? 0) > 0) {
+                    $signal = [
+                        'type' => 'vt_domain_suspicious',
+                        'weight' => -50,
+                        'impact' => 'warning',
+                        'description' => "Domain ini ({$domain}) mencurigakan.",
+                        'meta_data' => [
+                            'source' => 'VirusTotal Domain',
+                            'stats' => $stats
+                        ]
+                    ];
+                } else {
+                    // Clean domain
+                    $signal = [
+                        'type' => 'vt_domain_clean',
+                        'weight' => 20,
+                        'impact' => 'positive',
+                        'description' => "Reputasi domain bersih di VirusTotal.",
+                        'meta_data' => [
+                            'source' => 'VirusTotal Domain',
+                            'stats' => $stats,
+                            'categories' => $categories,
+                            'creation_date' => $data['creation_date'] ?? null
+                        ]
+                    ];
+                }
+
+                Cache::put($cacheKey, $signal, 86400); // 24 Hours
+                return $signal;
+            }
+        } catch (\Exception $e) {
+            Log::error("VT Domain fail: " . $e->getMessage());
+        }
+        return null;
+    }
+
+    private function checkUrl(string $url, string $key): ?array
+    {
+        $cacheKey = 'vt_url_' . md5($url);
+        $cached = Cache::get($cacheKey);
+        if ($cached)
+            return $cached;
+
+        try {
+            $urlId = rtrim(base64_encode($url), '=');
+            /** @var \Illuminate\Http\Client\Response $response */
+            $response = Http::withHeaders(['x-apikey' => $key])
+                ->timeout(10)
+                ->get("https://www.virustotal.com/api/v3/urls/{$urlId}");
+
+            if ($response->successful()) {
+                $data = $response->json()['data']['attributes'] ?? null;
+                if (!$data)
+                    return null;
+
+                $stats = $data['last_analysis_stats'];
+                $malicious = $stats['malicious'] ?? 0;
+                $results = $data['last_analysis_results'] ?? []; // The detailed vendor map
+
+                $signal = null;
+                if ($malicious > 0) {
+                    $signal = [
+                        'type' => 'vt_url_malicious',
+                        'weight' => -100,
+                        'impact' => 'critical',
+                        'description' => "URL spesifik ini terdeteksi mengandung malware/phishing.",
+                        'meta_data' => [
+                            'source' => 'VirusTotal URL',
+                            'stats' => $stats,
+                            'vendors' => $results // Detailed vendor list!
+                        ]
+                    ];
+                } elseif (($stats['suspicious'] ?? 0) > 0) {
+                    $signal = [
+                        'type' => 'vt_url_clean', // degraded to clean/neutral if just 1 suspicious? let's stick to warning
+                        'weight' => -30,
+                        'impact' => 'warning',
+                        'description' => "URL spesifik ini ditandai mencurigakan.",
+                        'meta_data' => [
+                            'source' => 'VirusTotal URL',
+                            'stats' => $stats,
+                            'vendors' => $results
+                        ]
+                    ];
+                } else {
+                    $signal = [
+                        'type' => 'vt_url_clean',
+                        'weight' => 10,
+                        'impact' => 'positive',
+                        'description' => "URL bersih dari malware.",
+                        'meta_data' => [
+                            'source' => 'VirusTotal URL',
+                            'stats' => $stats,
+                            'vendors' => $results
+                        ]
+                    ];
+                }
+
+                Cache::put($cacheKey, $signal, 43200);
+                return $signal;
+            }
+        } catch (\Exception $e) {
+            Log::error("VT URL fail: " . $e->getMessage());
+        }
+        return null;
     }
 }

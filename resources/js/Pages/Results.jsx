@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { usePage, router, Link } from '@inertiajs/react';
 import Layout from './Layout';
 import { motion } from 'framer-motion';
 
 export default function Results({ scan }) {
+    const [activeTab, setActiveTab] = useState('overview');
 
     // Auto-refresh mechanism for pending scans
     useEffect(() => {
@@ -42,9 +43,14 @@ export default function Results({ scan }) {
 
     const host = new URL(scan.normalized_url).hostname;
     const positiveSignals = scan.signals.filter(s => s.impact === 'positive').length;
-    const negativeSignals = scan.signals.filter(s => ['critical', 'navative'].includes(s.impact)).length;
+    const negativeSignals = scan.signals.filter(s => ['critical', 'warning'].includes(s.impact)).length;
 
-    // Determine Gauge Color
+    // Find detailed VT data for Security Tab
+    const vtUrlSignal = scan.signals.find(s => s.type.startsWith('vt_url'));
+    const vtDomainSignal = scan.signals.find(s => s.type.startsWith('vt_domain'));
+    const vendors = vtUrlSignal?.meta_data?.vendors || {};
+
+    // Gauge Logic
     let gaugeColor = "text-red-500";
     if (scan.risk_level === 'safe') gaugeColor = "text-green-500";
     if (scan.risk_level === 'suspicious') gaugeColor = "text-yellow-500";
@@ -53,7 +59,6 @@ export default function Results({ scan }) {
     const radius = 90;
     const circumference = 2 * Math.PI * radius;
     const offset = circumference - (scan.final_score / 100) * circumference;
-
 
     return (
         <Layout>
@@ -65,9 +70,13 @@ export default function Results({ scan }) {
                 {/* Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gray-800/50 p-6 rounded-2xl border border-gray-700 backdrop-blur-sm">
                     <div>
-                        <h1 className="text-2xl md:text-3xl font-bold text-white break-all">
-                            {host}
-                        </h1>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-2xl md:text-3xl font-bold text-white break-all">
+                                {host}
+                            </h1>
+                            {scan.risk_level === 'safe' && <span className="px-3 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-full border border-green-500/30">AMAN</span>}
+                            {scan.risk_level === 'dangerous' && <span className="px-3 py-1 bg-red-500/20 text-red-400 text-xs font-bold rounded-full border border-red-500/30">BERBAHAYA</span>}
+                        </div>
                         <p className="text-gray-400 text-sm mt-1">{scan.normalized_url}</p>
                         <p className="text-gray-500 text-xs mt-2">ID Scan: #{scan.id} • {new Date(scan.created_at).toLocaleString()}</p>
                     </div>
@@ -81,9 +90,27 @@ export default function Results({ scan }) {
                     </div>
                 </div>
 
+                {/* Tabs */}
+                <div className="flex justify-center mb-6">
+                    <div className="flex p-1 bg-gray-800/50 rounded-xl border border-gray-700">
+                        {['overview', 'security', 'domain'].map((tab) => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`px-8 py-2.5 rounded-lg text-sm font-medium transition-all min-w-[120px] ${activeTab === tab
+                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40 transform scale-105'
+                                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
+                                    }`}
+                            >
+                                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                    {/* Left Column: Score & Summary */}
+                    {/* Left Column: Gauge (Sticky) */}
                     <div className="lg:col-span-1 space-y-6">
                         {/* Score Card */}
                         <div className="bg-gray-800/80 p-8 rounded-2xl border border-gray-700 text-center relative overflow-hidden">
@@ -114,76 +141,105 @@ export default function Results({ scan }) {
                                 </div>
                             </div>
 
-                            <div className={`inline-block px-6 py-2 rounded-full font-bold text-lg uppercase tracking-wide border
-                                ${scan.risk_level === 'safe' ? 'bg-green-500/10 text-green-400 border-green-500/20' : ''}
-                                ${scan.risk_level === 'suspicious' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' : ''}
-                                ${scan.risk_level === 'dangerous' ? 'bg-red-500/10 text-red-500 border-red-500/20' : ''}
-                            `}>
-                                {scan.risk_level === 'safe' && '✅ Relatif Aman'}
-                                {scan.risk_level === 'suspicious' && '⚠️ Mencurigakan'}
-                                {scan.risk_level === 'dangerous' && '❌ Berbahaya'}
-                            </div>
-                        </div>
-
-                        {/* Stats Summary */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-gray-800/50 p-4 rounded-xl border border-gray-700 text-center">
-                                <span className="block text-2xl font-bold text-green-400">{positiveSignals}</span>
-                                <span className="text-xs text-gray-400 uppercase">Sinyal Positif</span>
-                            </div>
-                            <div className="bg-gray-800/50 p-4 rounded-xl border border-gray-700 text-center">
-                                <span className="block text-2xl font-bold text-red-400">{negativeSignals}</span>
-                                <span className="text-xs text-gray-400 uppercase">Resiko</span>
+                            <div className="grid grid-cols-2 gap-4 mt-8">
+                                <div className="bg-green-500/10 p-3 rounded-lg border border-green-500/10">
+                                    <span className="block text-2xl font-bold text-green-400">{positiveSignals}</span>
+                                    <span className="text-[10px] text-green-400/60 uppercase font-bold tracking-wider">Aman</span>
+                                </div>
+                                <div className="bg-red-500/10 p-3 rounded-lg border border-red-500/10">
+                                    <span className="block text-2xl font-bold text-red-400">{negativeSignals}</span>
+                                    <span className="text-[10px] text-red-400/60 uppercase font-bold tracking-wider">Resiko</span>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Right Column: Signals Detail */}
+                    {/* Right Column: Tab Content */}
                     <div className="lg:col-span-2 space-y-4">
-                        <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-                            Detail Analisis
-                        </h3>
 
-                        {scan.signals.length === 0 ? (
-                            <div className="p-6 bg-gray-800 rounded-xl border border-gray-700 text-center text-gray-400">
-                                Tidak ada sinyal spesifik yang ditemukan untuk URL ini.
+                        {activeTab === 'overview' && (
+                            <div className="space-y-4">
+                                {scan.signals.length === 0 ? (
+                                    <div className="p-8 text-center text-gray-500 bg-gray-800 rounded-xl border border-gray-700">Tidak ada sinyal.</div>
+                                ) : (
+                                    scan.signals.sort((a, b) => b.weight - a.weight).map((signal, idx) => (
+                                        <motion.div
+                                            key={idx}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: idx * 0.05 }}
+                                            className={`flex items-start gap-4 p-4 rounded-xl border ${signal.impact === 'critical' ? 'bg-red-900/10 border-red-500/20' :
+                                                signal.impact === 'warning' ? 'bg-yellow-900/10 border-yellow-500/20' :
+                                                    signal.impact === 'positive' ? 'bg-green-900/10 border-green-500/20' :
+                                                        'bg-gray-800 border-gray-700'
+                                                }`}
+                                        >
+                                            <div className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${signal.impact === 'critical' ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' :
+                                                signal.impact === 'warning' ? 'bg-yellow-500' : 'bg-green-500'
+                                                }`} />
+                                            <div>
+                                                <h4 className="text-white font-medium text-sm">{signal.type.replace(/_/g, ' ').toUpperCase()}</h4>
+                                                <p className="text-gray-400 text-sm mt-1">{signal.description}</p>
+                                            </div>
+                                        </motion.div>
+                                    ))
+                                )}
                             </div>
-                        ) : (
-                            scan.signals
-                                .sort((a, b) => b.weight - a.weight) // Sort desc by absolute weight (simplified)
-                                .map((signal, index) => (
-                                    <motion.div
-                                        key={signal.id}
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: index * 0.1 }}
-                                        className={`group flex gap-4 p-4 rounded-xl border transition-all hover:bg-gray-800/80
-                                        ${signal.impact === 'positive' ? 'bg-green-900/10 border-green-900/30 hover:border-green-500/50' : ''}
-                                        ${signal.impact === 'warning' ? 'bg-yellow-900/10 border-yellow-900/30 hover:border-yellow-500/50' : ''}
-                                        ${signal.impact === 'critical' ? 'bg-red-900/10 border-red-900/30 hover:border-red-500/50' : ''}
-                                        ${!['positive', 'warning', 'critical'].includes(signal.impact) ? 'bg-gray-800/40 border-gray-700' : ''}
-                                    `}
-                                    >
-                                        <div className="flex-shrink-0 mt-1">
-                                            {signal.impact === 'positive' && <span className="flex items-center justify-center w-8 h-8 rounded-full bg-green-500/20 text-green-400">✓</span>}
-                                            {signal.impact === 'warning' && <span className="flex items-center justify-center w-8 h-8 rounded-full bg-yellow-500/20 text-yellow-400">!</span>}
-                                            {signal.impact === 'critical' && <span className="flex items-center justify-center w-8 h-8 rounded-full bg-red-500/20 text-red-400">✕</span>}
-                                            {!['positive', 'warning', 'critical'].includes(signal.impact) && <span className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-500/20 text-gray-400">i</span>}
-                                        </div>
+                        )}
 
-                                        <div>
-                                            <h4 className="text-white font-semibold text-base mb-1 capitalize">
-                                                {signal.type.replace(/_/g, ' ')}
-                                            </h4>
-                                            <p className="text-gray-400 text-sm leading-relaxed">
-                                                {signal.description}
-                                            </p>
-                                            <span className="inline-block mt-2 text-xs font-mono px-2 py-1 rounded bg-gray-900 text-gray-500">
-                                                Weight: {signal.weight > 0 ? '+' : ''}{signal.weight}
-                                            </span>
+                        {activeTab === 'security' && (
+                            <div className="bg-gray-800/50 rounded-2xl border border-gray-700 p-6">
+                                <h3 className="text-white font-bold mb-4 flex items-center gap-2">
+                                    <span>🛡️</span> Security Vendors (VirusTotal)
+                                </h3>
+                                {Object.keys(vendors).length > 0 ? (
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                        {Object.entries(vendors).map(([vendor, result]) => (
+                                            <div key={vendor} className="flex items-center justify-between bg-gray-900/50 p-2 px-3 rounded text-xs border border-gray-700/50">
+                                                <span className="text-gray-300 truncate max-w-[100px]">{vendor}</span>
+                                                <span className={`font-bold ${result.category === 'malicious' ? 'text-red-400' :
+                                                    result.category === 'suspicious' ? 'text-yellow-400' : 'text-green-400'
+                                                    }`}>
+                                                    {result.result === 'clean' ? 'Safe' : result.result}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-10 text-gray-500">
+                                        <p>Data vendor keamanan tidak tersedia atau belum dipindai sepenuhnya.</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {activeTab === 'domain' && (
+                            <div className="bg-gray-800/50 rounded-2xl border border-gray-700 p-6 space-y-6">
+                                <div>
+                                    <h3 className="text-white font-bold mb-2">Domain Stats</h3>
+                                    {vtDomainSignal?.meta_data ? (
+                                        <div className="grid grid-cols-2 gap-4 text-sm">
+                                            <div className="bg-gray-900 p-3 rounded border border-gray-700">
+                                                <span className="text-gray-500 block">Creation Date</span>
+                                                <span className="text-white">
+                                                    {vtDomainSignal.meta_data.creation_date
+                                                        ? new Date(vtDomainSignal.meta_data.creation_date * 1000).toLocaleDateString()
+                                                        : 'Unknown'
+                                                    }
+                                                </span>
+                                            </div>
+                                            <div className="bg-gray-900 p-3 rounded border border-gray-700">
+                                                <span className="text-gray-500 block">Categories</span>
+                                                <span className="text-white">
+                                                    {Object.keys(vtDomainSignal.meta_data.categories || {}).join(', ') || 'Uncategorized'}
+                                                </span>
+                                            </div>
                                         </div>
-                                    </motion.div>
-                                ))
+                                    ) : (
+                                        <p className="text-gray-500 text-sm">Data domain detail tidak ditemukan.</p>
+                                    )}
+                                </div>
+                            </div>
                         )}
                     </div>
 
@@ -201,4 +257,3 @@ export default function Results({ scan }) {
         </Layout>
     );
 }
-
