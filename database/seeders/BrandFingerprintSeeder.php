@@ -61,6 +61,60 @@ class BrandFingerprintSeeder extends Seeder
                 'title_pattern' => 'Mandiri',
                 'favicon_hash' => null,
             ],
+            [
+                'domain' => 'dana.id',
+                'brand_name' => 'DANA',
+                'title_pattern' => 'DANA',
+                'favicon_hash' => null,
+            ],
+            [
+                'domain' => 'paypal.com',
+                'brand_name' => 'PayPal',
+                'title_pattern' => 'PayPal',
+                'favicon_hash' => null,
+            ],
+            [
+                'domain' => 'netflix.com',
+                'brand_name' => 'Netflix',
+                'title_pattern' => 'Netflix',
+                'favicon_hash' => null,
+            ],
+            [
+                'domain' => 'microsoft.com',
+                'brand_name' => 'Microsoft',
+                'title_pattern' => 'Microsoft',
+                'favicon_hash' => null,
+            ],
+            [
+                'domain' => 'apple.com',
+                'brand_name' => 'Apple',
+                'title_pattern' => 'Apple',
+                'favicon_hash' => null,
+            ],
+            [
+                'domain' => 'gojek.com',
+                'brand_name' => 'Gojek',
+                'title_pattern' => 'Gojek',
+                'favicon_hash' => null,
+            ],
+            [
+                'domain' => 'grab.com',
+                'brand_name' => 'Grab',
+                'title_pattern' => 'Grab',
+                'favicon_hash' => null,
+            ],
+            [
+                'domain' => 'ovo.id',
+                'brand_name' => 'OVO',
+                'title_pattern' => 'OVO',
+                'favicon_hash' => null,
+            ],
+            [
+                'domain' => 'linkaja.id',
+                'brand_name' => 'LinkAja',
+                'title_pattern' => 'LinkAja',
+                'favicon_hash' => null,
+            ],
         ];
 
         DB::table('brand_fingerprints')->insertOrIgnore($brands);

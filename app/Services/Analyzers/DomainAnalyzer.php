@@ -26,10 +26,10 @@ class DomainAnalyzer implements AnalyzerInterface
                 // If direct domain fails, try registering domain (remove subdomains) - simplified for MVP
                 // For now, if failed, just return neutral
                 $signals[] = [
-                    'type' => 'whois_params_missing',
+                    'type' => 'whois_unknown',
                     'weight' => 0,
                     'impact' => 'info',
-                    'description' => 'Data WHOIS tidak ditemukan atau disembunyikan.'
+                    'description' => 'Data WHOIS tidak ditemukan atau disembunyikan (Unknown).'
                 ];
                 return $signals;
             }

@@ -28,6 +28,7 @@ class BrandDetector implements AnalyzerInterface
 
         if (!$html) {
             try {
+                /** @var \Illuminate\Http\Client\Response $response */
                 $response = Http::timeout(5)->get($url);
                 if ($response->successful()) {
                     $html = $response->body();
@@ -54,13 +55,17 @@ class BrandDetector implements AnalyzerInterface
 
         foreach ($fingerprints as $brand) {
             // If the current domain IS the official domain (or subdomain), skip
-            // Allow subdomains of official domain
+            // Allow subdomains of official domain e.g. promo.bri.co.id
             if (str_ends_with($host, $brand->domain) || $host === $brand->domain) {
                 continue; // It's legitimate
             }
 
+            // Regex for whole word matching to avoid "perdana" matching "dana"
+            // \bBRAND\b
+            $brandRegex = "/\b" . preg_quote($brand->brand_name, '/') . "\b/i";
+
             // Check if Title contains Brand Name
-            if ($title && stripos($title, $brand->brand_name) !== false) {
+            if ($title && preg_match($brandRegex, $title)) {
                 $signals[] = [
                     'type' => 'brand_impersonation_title',
                     'weight' => -40,
@@ -71,13 +76,12 @@ class BrandDetector implements AnalyzerInterface
 
             // Check if URL contains Brand Name (heuristic overlap)
             // e.g. secure-bca-verify.com
-            // Don't flag if it's just a general word, but for MVP brands (BCA, BRI, Google, Facebook) it's usually valid.
-            if (stripos($url, $brand->brand_name) !== false) {
+            if (preg_match($brandRegex, $url)) {
                 $signals[] = [
                     'type' => 'brand_impersonation_url',
                     'weight' => -30,
                     'impact' => 'critical',
-                    'description' => "URL mengandung nama merek {$brand->brand_name} tetapi bukan domain resmi."
+                    'description' => "URL mengandung nama merek {$brand->brand_name} (whole word) tetapi bukan domain resmi."
                 ];
             }
         }

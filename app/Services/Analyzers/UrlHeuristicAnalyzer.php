@@ -20,44 +20,57 @@ class UrlHeuristicAnalyzer implements AnalyzerInterface
         $path = $parsed['path'] ?? '';
         $query = $parsed['query'] ?? '';
 
-        // 1. Keyword Detection within URL
-        $suspiciousKeywords = [
-            'login',
-            'signin',
-            'verify',
-            'account',
-            'secure',
-            'bank',
-            'update',
-            'wallet',
-            'auth',
-            'confirm',
-            'bca',
-            'bri',
-            'mandiri',
-            'tar',
-            'dana',
-            'support',
-            'service',
-            'help'
-        ];
-
-        $foundKeywords = [];
-        foreach ($suspiciousKeywords as $keyword) {
-            // Check if keyword is in host or path, but try to ignore if it's the main domain (partially)
-            // Simple check: if keyword appears in string
-            if (stripos($url, $keyword) !== false) {
-                $foundKeywords[] = $keyword;
+        // Whitelist for Heuristics
+        // If domain is known good major platform, we skip generic heuristic checks to avoid false positives.
+        $whitelist = ['google.com', 'facebook.com', 'instagram.com', 'twitter.com', 'linkedin.com', 'microsoft.com', 'apple.com', 'github.com', 'paypal.com'];
+        $isWhitelisted = false;
+        foreach ($whitelist as $wl) {
+            if (str_ends_with($host, $wl)) {
+                $isWhitelisted = true;
+                break;
             }
         }
 
-        if (!empty($foundKeywords)) {
-            $signals[] = [
-                'type' => 'suspicious_keyword',
-                'weight' => -10 * count($foundKeywords), // Cumulative penalty
-                'impact' => 'warning',
-                'description' => 'URL mengandung kata kunci mencurigakan: ' . implode(', ', $foundKeywords)
+        // 1. Keyword Detection within URL
+        // Only run if NOT whitelisted
+        if (!$isWhitelisted) {
+            $suspiciousKeywords = [
+                'login',
+                'signin',
+                'verify',
+                'account',
+                'secure',
+                'bank',
+                'update',
+                'wallet',
+                'auth',
+                'confirm',
+                'bca',
+                'bri',
+                'mandiri',
+                'tar',
+                'dana',
+                'support',
+                'service',
+                'help'
             ];
+
+            $foundKeywords = [];
+            foreach ($suspiciousKeywords as $keyword) {
+                // Check if keyword is in host or path
+                if (stripos($url, $keyword) !== false) {
+                    $foundKeywords[] = $keyword;
+                }
+            }
+
+            if (!empty($foundKeywords)) {
+                $signals[] = [
+                    'type' => 'suspicious_keyword',
+                    'weight' => -10 * count($foundKeywords), // Cumulative penalty
+                    'impact' => 'warning',
+                    'description' => 'URL mengandung kata kunci mencurigakan: ' . implode(', ', $foundKeywords)
+                ];
+            }
         }
 
         // 2. Subdomain Depth

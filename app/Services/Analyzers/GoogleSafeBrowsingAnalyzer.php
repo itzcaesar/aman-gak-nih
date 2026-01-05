@@ -41,6 +41,7 @@ class GoogleSafeBrowsingAnalyzer implements AnalyzerInterface
                 ]
             ];
 
+            /** @var \Illuminate\Http\Client\Response $response */
             $response = Http::timeout(5)->post($endpoint, $payload);
 
             if ($response->successful()) {

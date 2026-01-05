@@ -41,7 +41,8 @@ class RunWebsiteScanJob implements ShouldQueue
         UrlHeuristicAnalyzer $heuristicAnalyzer,
         PageInspector $pageInspector,
         BrandDetector $brandDetector,
-        \App\Services\Analyzers\GoogleSafeBrowsingAnalyzer $gsbAnalyzer
+        \App\Services\Analyzers\GoogleSafeBrowsingAnalyzer $gsbAnalyzer,
+        \App\Services\Analyzers\VirusTotalAnalyzer $vtAnalyzer
     ): void {
         $scan = Scan::find($this->scanId);
 
@@ -58,7 +59,8 @@ class RunWebsiteScanJob implements ShouldQueue
             $heuristicAnalyzer,
             $pageInspector,
             $brandDetector,
-            $gsbAnalyzer
+            $gsbAnalyzer,
+            $vtAnalyzer
         ];
 
         try {
