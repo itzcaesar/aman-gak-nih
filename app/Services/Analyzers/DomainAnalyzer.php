@@ -56,6 +56,7 @@ class DomainAnalyzer implements AnalyzerInterface
         }
 
         try {
+            /** @var \Illuminate\Http\Client\Response $response */
             $response = Http::withoutVerifying()
                 ->withHeaders(['X-Api-Key' => $apiNinjaKey])
                 ->timeout(10)
