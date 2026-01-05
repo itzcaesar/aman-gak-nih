@@ -50,6 +50,7 @@ class VirusTotalAnalyzer implements AnalyzerInterface
         try {
             /** @var \Illuminate\Http\Client\Response $response */
             $response = Http::withHeaders(['x-apikey' => $key])
+                ->withoutVerifying()
                 ->timeout(10)
                 ->get("https://www.virustotal.com/api/v3/domains/{$domain}");
 
@@ -62,42 +63,61 @@ class VirusTotalAnalyzer implements AnalyzerInterface
                 $malicious = $stats['malicious'] ?? 0;
                 $categories = $data['categories'] ?? [];
 
+                // Tiered scoring: 1-2 = info, 3-5 = warning, 6+ = critical
+                $suspicious = $stats['suspicious'] ?? 0;
+                $totalBad = $malicious + $suspicious;
+
+                // Common metadata for all signals
+                $deepMeta = [
+                    'source' => 'VirusTotal Domain',
+                    'stats' => $stats,
+                    'categories' => $categories,
+                    'creation_date' => $data['creation_date'] ?? null,
+                    'last_dns_records' => $data['last_dns_records'] ?? [],
+                    'last_https_certificate' => $data['last_https_certificate'] ?? null,
+                    'jarm' => $data['jarm'] ?? null,
+                    'whois' => $data['whois'] ?? null,
+                    'registrar' => $data['registrar'] ?? null,
+                    'popularity_ranks' => $data['popularity_ranks'] ?? [],
+                    'last_analysis_date' => $data['last_analysis_date'] ?? null,
+                ];
+
                 $signal = null;
-                if ($malicious > 0) {
+                if ($malicious >= 6) {
+                    // Confirmed malicious - multiple vendors agree
                     $signal = [
                         'type' => 'vt_domain_malicious',
                         'weight' => -100,
                         'impact' => 'critical',
-                        'description' => "Domain ini ({$domain}) ditandai BERBAHAYA oleh {$malicious} vendor keamanan.",
-                        'meta_data' => [
-                            'source' => 'VirusTotal Domain',
-                            'stats' => $stats,
-                            'categories' => $categories
-                        ]
+                        'description' => "Domain ini ({$domain}) TERIDENTIFIKASI BERBAHAYA oleh {$malicious} vendor keamanan.",
+                        'meta_data' => $deepMeta
                     ];
-                } elseif (($stats['suspicious'] ?? 0) > 0) {
+                } elseif ($malicious >= 3) {
+                    // High suspicion
                     $signal = [
                         'type' => 'vt_domain_suspicious',
                         'weight' => -50,
                         'impact' => 'warning',
-                        'description' => "Domain ini ({$domain}) mencurigakan.",
-                        'meta_data' => [
-                            'source' => 'VirusTotal Domain',
-                            'stats' => $stats
-                        ]
+                        'description' => "Domain ini ({$domain}) mencurigakan - {$malicious} vendor melaporkan masalah.",
+                        'meta_data' => $deepMeta
+                    ];
+                } elseif ($totalBad > 0) {
+                    // Low concern - possibly false positive
+                    $signal = [
+                        'type' => 'vt_domain_low_risk',
+                        'weight' => -10,
+                        'impact' => 'info',
+                        'description' => "Domain ini ({$domain}) memiliki {$totalBad} laporan minor (kemungkinan false positive).",
+                        'meta_data' => $deepMeta
                     ];
                 } else {
+                    // Clean
                     $signal = [
                         'type' => 'vt_domain_clean',
                         'weight' => 20,
                         'impact' => 'positive',
                         'description' => "Reputasi domain bersih di VirusTotal.",
-                        'meta_data' => [
-                            'source' => 'VirusTotal Domain',
-                            'stats' => $stats,
-                            'categories' => $categories,
-                            'creation_date' => $data['creation_date'] ?? null
-                        ]
+                        'meta_data' => $deepMeta
                     ];
                 }
 
@@ -121,6 +141,7 @@ class VirusTotalAnalyzer implements AnalyzerInterface
             $urlId = rtrim(base64_encode($url), '=');
             /** @var \Illuminate\Http\Client\Response $response */
             $response = Http::withHeaders(['x-apikey' => $key])
+                ->withoutVerifying()
                 ->timeout(10)
                 ->get("https://www.virustotal.com/api/v3/urls/{$urlId}");
 
@@ -133,44 +154,57 @@ class VirusTotalAnalyzer implements AnalyzerInterface
                 $malicious = $stats['malicious'] ?? 0;
                 $results = $data['last_analysis_results'] ?? [];
 
-                $signal = null;
-                if ($malicious > 0) {
-                    $signal = [
-                        'type' => 'vt_url_malicious',
-                        'weight' => -100,
-                        'impact' => 'critical',
-                        'description' => "URL spesifik ini terdeteksi mengandung malware/phishing.",
-                        'meta_data' => [
-                            'source' => 'VirusTotal URL',
-                            'stats' => $stats,
-                            'vendors' => $results
-                        ]
-                    ];
-                } elseif (($stats['suspicious'] ?? 0) > 0) {
-                    $signal = [
-                        'type' => 'vt_url_clean',
-                        'weight' => -30,
-                        'impact' => 'warning',
-                        'description' => "URL spesifik ini ditandai mencurigakan.",
-                        'meta_data' => [
-                            'source' => 'VirusTotal URL',
-                            'stats' => $stats,
-                            'vendors' => $results
-                        ]
-                    ];
-                } else {
-                    $signal = [
-                        'type' => 'vt_url_clean',
-                        'weight' => 10,
-                        'impact' => 'positive',
-                        'description' => "URL bersih dari malware.",
-                        'meta_data' => [
-                            'source' => 'VirusTotal URL',
-                            'stats' => $stats,
-                            'vendors' => $results
-                        ]
-                    ];
+                // Tiered URL scoring
+                $suspicious = $stats['suspicious'] ?? 0;
+                $totalBad = $malicious + $suspicious;
+
+                $type = 'vt_url_clean';
+                $weight = 10;
+                $impact = 'positive';
+                $desc = 'URL bersih dari malware.';
+
+                if ($malicious >= 6) {
+                    $type = 'vt_url_malicious';
+                    $weight = -100;
+                    $impact = 'critical';
+                    $desc = "URL ini TERIDENTIFIKASI BERBAHAYA oleh {$malicious} vendor.";
+                } elseif ($malicious >= 3) {
+                    $type = 'vt_url_suspicious';
+                    $weight = -50;
+                    $impact = 'warning';
+                    $desc = "URL ini mencurigakan - {$malicious} vendor melaporkan masalah.";
+                } elseif ($totalBad > 0) {
+                    $type = 'vt_url_low_risk';
+                    $weight = -10;
+                    $impact = 'info';
+                    $desc = "URL memiliki {$totalBad} laporan minor (kemungkinan false positive).";
                 }
+
+                $signal = [
+                    'type' => $type,
+                    'weight' => $weight,
+                    'impact' => $impact,
+                    'description' => $desc,
+                    'meta_data' => [
+                        'source' => 'VirusTotal URL',
+                        'stats' => $stats,
+                        'vendors' => $results,
+                        'http_response' => [
+                            'final_url' => $data['last_final_url'] ?? null,
+                            'status_code' => $data['last_http_response_code'] ?? null,
+                            'content_length' => $data['last_http_response_content_length'] ?? null,
+                            'sha256' => $data['last_http_response_content_sha256'] ?? null,
+                            'headers' => $data['last_http_response_headers'] ?? [],
+                        ],
+                        'html_info' => [
+                            'title' => $data['html_meta']['title'][0] ?? null,
+                        ],
+                        'votes' => $data['total_votes'] ?? [],
+                        'submission' => [
+                            'date' => $data['last_submission_date'] ?? null,
+                        ]
+                    ]
+                ];
 
                 Cache::put($cacheKey, $signal, 43200);
                 return $signal;

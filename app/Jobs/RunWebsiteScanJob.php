@@ -24,6 +24,20 @@ class RunWebsiteScanJob implements ShouldQueue
     public $scanId;
 
     /**
+     * The number of seconds the job can run before timing out.
+     *
+     * @var int
+     */
+    public $timeout = 120;
+
+    /**
+     * The number of times the job may be attempted.
+     *
+     * @var int
+     */
+    public $tries = 1;
+
+    /**
      * Create a new job instance.
      */
     public function __construct(int $scanId)

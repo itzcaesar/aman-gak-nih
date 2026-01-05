@@ -42,7 +42,7 @@ class GoogleSafeBrowsingAnalyzer implements AnalyzerInterface
             ];
 
             /** @var \Illuminate\Http\Client\Response $response */
-            $response = Http::timeout(5)->post($endpoint, $payload);
+            $response = Http::withoutVerifying()->timeout(5)->post($endpoint, $payload);
 
             if ($response->successful()) {
                 $data = $response->json();
@@ -59,7 +59,11 @@ class GoogleSafeBrowsingAnalyzer implements AnalyzerInterface
                         'type' => 'google_safe_browsing_clean',
                         'weight' => 10,
                         'impact' => 'positive',
-                        'description' => 'Tidak ditemukan di database Google Safe Browsing.'
+                        'description' => 'Tidak ditemukan di database Google Safe Browsing.',
+                        'meta_data' => [
+                            'checked_threat_types' => $payload['threatInfo']['threatTypes'],
+                            'platform_type' => 'ANY_PLATFORM'
+                        ]
                     ];
                 }
             } else {

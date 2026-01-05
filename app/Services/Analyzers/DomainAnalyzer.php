@@ -3,6 +3,8 @@
 namespace App\Services\Analyzers;
 
 use App\Models\Scan;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Iodev\Whois\Factory;
 
 class DomainAnalyzer implements AnalyzerInterface
@@ -18,96 +20,105 @@ class DomainAnalyzer implements AnalyzerInterface
         $url = $scan->normalized_url;
         $host = parse_url($url, PHP_URL_HOST);
 
-        // Common multipart TLDs
-        $multipartTlds = ['co.id', 'ac.id', 'go.id', 'sch.id', 'or.id', 'co.uk', 'com.sg', 'com.my', 'edu.my'];
+        // Strip www. prefix
+        $domain = preg_replace('/^www\./', '', $host);
 
-        try {
-            $whois = Factory::get()->createWhois();
-            $info = null;
+        // Try to get root domain for subdomains
+        $parts = explode('.', $domain);
+        if (count($parts) > 2) {
+            // Check for multipart TLDs
+            $multipartTlds = ['co.id', 'ac.id', 'go.id', 'sch.id', 'or.id', 'co.uk', 'com.sg', 'com.my', 'edu.my'];
+            $tld2 = $parts[count($parts) - 2] . '.' . $parts[count($parts) - 1];
 
-            try {
-                $info = $whois->loadDomainInfo($host);
-            } catch (\Exception $e) {
-                // Ignore, try fallback
+            if (in_array($tld2, $multipartTlds)) {
+                $domain = implode('.', array_slice($parts, -3));
+            } else {
+                $domain = implode('.', array_slice($parts, -2));
             }
+        }
 
-            // Retry with stripped subdomains if initial lookup fails
-            if (!$info) {
-                $parts = explode('.', $host);
-                $count = count($parts);
+        $creationDate = null;
+        $registrar = null;
 
-                if ($count >= 3) {
-                    $tld2 = $parts[$count - 2] . '.' . $parts[$count - 1];
+        // Method 1: API Ninja WHOIS (Primary - more reliable)
+        $apiNinjaKey = env('API_NINJA_KEY');
+        if ($apiNinjaKey) {
+            try {
+                $response = Http::withoutVerifying()
+                    ->withHeaders(['X-Api-Key' => $apiNinjaKey])
+                    ->timeout(10)
+                    ->get("https://api.api-ninjas.com/v1/whois?domain={$domain}");
 
-                    // Handle multipart TLDs (e.g. google.co.id) vs generic (example.com)
-                    if (in_array($tld2, $multipartTlds)) {
-                        if ($count > 3) {
-                            $rootDomain = implode('.', array_slice($parts, -3));
-                            try {
-                                $info = $whois->loadDomainInfo($rootDomain);
-                            } catch (\Exception $e) {
-                            }
-                        }
-                    } else {
-                        $rootDomain = implode('.', array_slice($parts, -2));
-                        try {
-                            $info = $whois->loadDomainInfo($rootDomain);
-                        } catch (\Exception $e) {
-                        }
+                if ($response->successful()) {
+                    $data = $response->json();
+
+                    // API Ninja returns creation_date as Unix timestamp or array
+                    if (isset($data['creation_date'])) {
+                        $cd = $data['creation_date'];
+                        $creationDate = is_array($cd) ? $cd[0] : $cd;
+                    }
+
+                    if (isset($data['registrar'])) {
+                        $registrar = is_array($data['registrar']) ? $data['registrar'][0] : $data['registrar'];
                     }
                 }
+            } catch (\Exception $e) {
+                Log::warning("API Ninja WHOIS failed for {$domain}: " . $e->getMessage());
             }
+        }
 
-            if (!$info) {
-                $signals[] = [
-                    'type' => 'whois_unknown',
-                    'weight' => 0,
-                    'impact' => 'info',
-                    'description' => 'Data WHOIS publik tidak ditemukan (Privacy Protected atau TLD tidak didukung).'
-                ];
-                return $signals;
-            }
+        // Method 2: php-whois library (Fallback)
+        if (!$creationDate) {
+            try {
+                $whois = Factory::get()->createWhois();
+                $info = $whois->loadDomainInfo($domain);
 
-            $creationDate = $info->creationDate;
-
-            if ($creationDate) {
-                $age = time() - $creationDate;
-                $ageDays = $age / 86400;
-                $ageYears = round($ageDays / 365, 1);
-
-                if ($ageDays < 30) {
-                    $signals[] = [
-                        'type' => 'new_domain',
-                        'weight' => -40, // Increased penalty
-                        'impact' => 'critical',
-                        'description' => "Domain SANGAT BARU (berumur {$ageDays} hari). Waspada penipuan!"
-                    ];
-                } elseif ($ageDays < 180) {
-                    $signals[] = [
-                        'type' => 'young_domain',
-                        'weight' => -15,
-                        'impact' => 'warning',
-                        'description' => "Domain relatif baru (berumur < 6 bulan). Gunakan dengan hati-hati."
-                    ];
-                } else {
-                    $signals[] = [
-                        'type' => 'established_domain',
-                        'weight' => 10,
-                        'impact' => 'positive',
-                        'description' => "Domain terpercaya (berumur {$ageYears} tahun)."
-                    ];
+                if ($info && $info->creationDate) {
+                    $creationDate = $info->creationDate;
                 }
+            } catch (\Exception $e) {
+                Log::warning("php-whois failed for {$domain}: " . $e->getMessage());
+            }
+        }
+
+        // Generate signals based on domain age
+        if ($creationDate) {
+            $age = time() - $creationDate;
+            $ageDays = $age / 86400;
+            $ageYears = round($ageDays / 365, 1);
+
+            if ($ageDays < 30) {
+                $signals[] = [
+                    'type' => 'new_domain',
+                    'weight' => -40,
+                    'impact' => 'critical',
+                    'description' => "Domain SANGAT BARU (berumur " . round($ageDays) . " hari). Waspada penipuan!",
+                    'meta_data' => ['registrar' => $registrar, 'creation_date' => $creationDate]
+                ];
+            } elseif ($ageDays < 180) {
+                $signals[] = [
+                    'type' => 'young_domain',
+                    'weight' => -15,
+                    'impact' => 'warning',
+                    'description' => "Domain relatif baru (berumur < 6 bulan). Gunakan dengan hati-hati.",
+                    'meta_data' => ['registrar' => $registrar, 'creation_date' => $creationDate]
+                ];
             } else {
                 $signals[] = [
-                    'type' => 'whois_hidden_date',
-                    'weight' => -5,
-                    'impact' => 'info',
-                    'description' => 'Tanggal pembuatan domain disembunyikan oleh pemilik.'
+                    'type' => 'established_domain',
+                    'weight' => 10,
+                    'impact' => 'positive',
+                    'description' => "Domain terpercaya (berumur {$ageYears} tahun).",
+                    'meta_data' => ['registrar' => $registrar, 'creation_date' => $creationDate]
                 ];
             }
-
-        } catch (\Exception $e) {
-            // usage specific error handling
+        } else {
+            $signals[] = [
+                'type' => 'whois_unknown',
+                'weight' => 0,
+                'impact' => 'info',
+                'description' => 'Data WHOIS tidak tersedia (Privacy Protected atau TLD tidak didukung).'
+            ];
         }
 
         return $signals;
