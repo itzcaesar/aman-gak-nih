@@ -26,7 +26,6 @@ class SslAnalyzer implements AnalyzerInterface
                 'impact' => 'critical',
                 'description' => 'Website tidak menggunakan HTTPS. Komunikasi data tidak terenkripsi.'
             ];
-            // Cannot check SSL certificate if not HTTPS
             return $signals;
         }
 
@@ -34,7 +33,7 @@ class SslAnalyzer implements AnalyzerInterface
         $streamContext = stream_context_create([
             'ssl' => [
                 'capture_peer_cert' => true,
-                'verify_peer' => true, // We want to know if it verify fails
+                'verify_peer' => true,
                 'verify_peer_name' => true,
                 'timeout' => 5
             ]
@@ -85,8 +84,7 @@ class SslAnalyzer implements AnalyzerInterface
                 ];
             }
 
-            // Check Issuer (Example: Let's Encrypt is okay, but maybe flag unverified ones? For MVP assume standard issuers ok)
-            // Just recording valid SSL is enough positive signal for now.
+            // Issuer validation skipped for MVP
         } else {
             $signals[] = [
                 'type' => 'ssl_no_cert',

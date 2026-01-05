@@ -1,5 +1,5 @@
 import React from 'react';
-import { useForm, Link } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react'; // Cleaned imports
 import { motion } from 'framer-motion';
 
 export default function Welcome() {
@@ -15,7 +15,6 @@ export default function Welcome() {
     return (
         <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-blue-500/30 flex flex-col relative overflow-x-hidden">
 
-            {/* Navbar */}
             <nav className="relative z-50 p-6 w-full border-b border-white/5 bg-[#0a0a0a]/50 backdrop-blur-md">
                 <div className="max-w-7xl mx-auto flex justify-between items-center">
                     <div className="flex items-center gap-3">
@@ -32,7 +31,6 @@ export default function Welcome() {
                 </div>
             </nav>
 
-            {/* Main Content */}
             <main className="relative z-10 flex-grow flex flex-col items-center justify-center px-4 py-20">
 
                 <motion.div
@@ -41,7 +39,6 @@ export default function Welcome() {
                     transition={{ duration: 0.8 }}
                     className="max-w-4xl w-full text-center space-y-10"
                 >
-                    {/* Status Pill - Blocky Style */}
                     <div className="inline-flex items-center gap-3 px-4 py-1.5 bg-blue-900/10 border border-blue-500/30 backdrop-blur-md">
                         <span className="relative flex h-2 w-2">
                             <span className="animate-ping absolute inline-flex h-full w-full bg-blue-400 opacity-75"></span>
@@ -50,7 +47,6 @@ export default function Welcome() {
                         <span className="text-xs font-mono text-blue-400 tracking-widest uppercase">SYSTEM ONLINE // READY TO SCAN</span>
                     </div>
 
-                    {/* Headline */}
                     <h1 className="text-5xl md:text-7xl font-bold tracking-tighter text-white leading-tight">
                         VERIFY DIGITAL <span className="text-transparent bg-clip-text bg-gradient-to-b from-blue-400 to-blue-600">TRUST</span>
                     </h1>
@@ -60,11 +56,8 @@ export default function Welcome() {
                         DETECT PHISHING, MALWARE, AND FRAUD IN REAL-TIME.
                     </p>
 
-                    {/* Modern Input Section - Boxy */}
                     <div className="mt-12 max-w-xl mx-auto relative group z-20">
-
                         <form onSubmit={handleSubmit} className="relative flex items-center bg-[#0a0a0a] border border-blue-900/50 focus-within:border-blue-500 transition-all shadow-[0_0_50px_rgba(0,0,0,0.5)]">
-                            {/* Accent Line */}
                             <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600"></div>
 
                             <div className="pl-6 text-blue-500">
@@ -100,7 +93,6 @@ export default function Welcome() {
                         </motion.div>
                     )}
 
-                    {/* Features Grid - Technical/Boxy */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-20 pt-10 border-t border-white/5">
                         <div className="flex flex-col items-center p-6 border border-white/5 hover:border-blue-500/30 transition-colors group cursor-default">
                             <span className="text-2xl mb-4 text-gray-500 group-hover:text-blue-400 transition-colors">🔒</span>
@@ -127,7 +119,6 @@ export default function Welcome() {
                 </motion.div>
             </main>
 
-            {/* Footer */}
             <footer className="relative z-10 border-t border-white/5 bg-[#0a0a0a] py-8">
                 <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center text-xs text-gray-600 font-mono uppercase tracking-wider">
                     <p>© {new Date().getFullYear()} AMANGAKNIH.ID // OPEN SOURCE SECURITY</p>

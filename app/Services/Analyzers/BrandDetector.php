@@ -21,8 +21,6 @@ class BrandDetector implements AnalyzerInterface
         $host = parse_url($url, PHP_URL_HOST);
 
         // Fetch HTML (cached if possible from PageInspector, or fresh)
-        // Key idea: PageInspector runs before, or we share cache.
-        // Let's use a cache key convention based on URL
         $cacheKey = 'scan_html_' . md5($url);
         $html = Cache::get($cacheKey);
 
@@ -36,12 +34,11 @@ class BrandDetector implements AnalyzerInterface
                     Cache::put($cacheKey, $html, 300);
                 }
             } catch (\Exception $e) {
-                // Ignore download errors here, PageInspector handles it
             }
         }
 
         if (!$html) {
-            return []; // Cannot analyze without content
+            return [];
         }
 
         // Extract Title
@@ -55,13 +52,11 @@ class BrandDetector implements AnalyzerInterface
 
         foreach ($fingerprints as $brand) {
             // If the current domain IS the official domain (or subdomain), skip
-            // Allow subdomains of official domain e.g. promo.bri.co.id
             if (str_ends_with($host, $brand->domain) || $host === $brand->domain) {
-                continue; // It's legitimate
+                continue;
             }
 
             // Regex for whole word matching to avoid "perdana" matching "dana"
-            // \bBRAND\b
             $brandRegex = "/\b" . preg_quote($brand->brand_name, '/') . "\b/i";
 
             // Check if Title contains Brand Name
@@ -75,7 +70,6 @@ class BrandDetector implements AnalyzerInterface
             }
 
             // Check if URL contains Brand Name (heuristic overlap)
-            // e.g. secure-bca-verify.com
             if (preg_match($brandRegex, $url)) {
                 $signals[] = [
                     'type' => 'brand_impersonation_url',

@@ -25,13 +25,13 @@ class VirusTotalAnalyzer implements AnalyzerInterface
         $signals = [];
         $host = parse_url($url, PHP_URL_HOST);
 
-        // 1. DOMAIN CHECK (Reputation & Categories)
+        // Check Domain Reputation
         $domainSignal = $this->checkDomain($host, $key);
         if ($domainSignal) {
             $signals[] = $domainSignal;
         }
 
-        // 2. URL CHECK (Specific path)
+        // Check URL Specifics
         $urlSignal = $this->checkUrl($url, $key);
         if ($urlSignal) {
             $signals[] = $urlSignal;
@@ -87,7 +87,6 @@ class VirusTotalAnalyzer implements AnalyzerInterface
                         ]
                     ];
                 } else {
-                    // Clean domain
                     $signal = [
                         'type' => 'vt_domain_clean',
                         'weight' => 20,
@@ -132,7 +131,7 @@ class VirusTotalAnalyzer implements AnalyzerInterface
 
                 $stats = $data['last_analysis_stats'];
                 $malicious = $stats['malicious'] ?? 0;
-                $results = $data['last_analysis_results'] ?? []; // The detailed vendor map
+                $results = $data['last_analysis_results'] ?? [];
 
                 $signal = null;
                 if ($malicious > 0) {
@@ -144,12 +143,12 @@ class VirusTotalAnalyzer implements AnalyzerInterface
                         'meta_data' => [
                             'source' => 'VirusTotal URL',
                             'stats' => $stats,
-                            'vendors' => $results // Detailed vendor list!
+                            'vendors' => $results
                         ]
                     ];
                 } elseif (($stats['suspicious'] ?? 0) > 0) {
                     $signal = [
-                        'type' => 'vt_url_clean', // degraded to clean/neutral if just 1 suspicious? let's stick to warning
+                        'type' => 'vt_url_clean',
                         'weight' => -30,
                         'impact' => 'warning',
                         'description' => "URL spesifik ini ditandai mencurigakan.",

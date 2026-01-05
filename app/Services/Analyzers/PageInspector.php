@@ -18,7 +18,8 @@ class PageInspector implements AnalyzerInterface
         $url = $scan->normalized_url;
 
         try {
-            // Fetch with a standard User-Agent to avoid blocking
+            // Fetch with standard User-Agent
+            /** @var \Illuminate\Http\Client\Response $response */
             $response = Http::timeout(10)
                 ->withoutVerifying()
                 ->withUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36')
@@ -27,7 +28,7 @@ class PageInspector implements AnalyzerInterface
             if ($response->failed()) {
                 $signals[] = [
                     'type' => 'page_fetch_failed',
-                    'weight' => 0, // Neutral, might be offline
+                    'weight' => 0,
                     'impact' => 'info',
                     'description' => 'Gagal mengambil konten halaman: ' . $response->status()
                 ];
@@ -36,11 +37,10 @@ class PageInspector implements AnalyzerInterface
 
             $html = $response->body();
 
-            // Cache HTML for other analyzers (BrandDetector)
-            // Use same key strategy
+            // Cache HTML for shared usage
             \Illuminate\Support\Facades\Cache::put('scan_html_' . md5($url), $html, 300);
 
-            // 1. Detect Meta Refresh (often used for sneaky redirects)
+            // Check for Meta Refresh
             if (preg_match('/<meta[^>]+http-equiv=["\']?refresh["\']?[^>]*>/i', $html)) {
                 $signals[] = [
                     'type' => 'meta_refresh_detected',
@@ -50,7 +50,7 @@ class PageInspector implements AnalyzerInterface
                 ];
             }
 
-            // 2. Hidden Iframes (basic check)
+            // Check for hidden iframes
             if (
                 preg_match('/<iframe[^>]+style=["\']?.*display:\s*none.*["\']?[^>]*>/i', $html) ||
                 preg_match('/<iframe[^>]+width=["\']?0["\']?[^>]*>/i', $html)
@@ -63,7 +63,7 @@ class PageInspector implements AnalyzerInterface
                 ];
             }
 
-            // 3. Password fields on non-HTTPS (redundant if SslAnalyzer catches, but good specific check)
+            // Check for unencrypted password fields
             if (stripos($html, 'type="password"') !== false && !str_starts_with($url, 'https')) {
                 $signals[] = [
                     'type' => 'password_form_insecure',

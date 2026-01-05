@@ -18,7 +18,7 @@ export default function Results({ scan }) {
         }
     }, [scan.status]);
 
-    // --- Loading State ---
+    // Loading View
     if (scan.status !== 'completed' && scan.status !== 'failed') {
         return (
             <div className="min-h-screen bg-[#0a0a0a] text-white font-sans flex flex-col items-center justify-center relative overflow-hidden">
@@ -37,7 +37,7 @@ export default function Results({ scan }) {
         );
     }
 
-    // --- Results Data ---
+    // Analysis Data
     const host = new URL(scan.normalized_url).hostname;
     const positiveSignals = scan.signals.filter(s => s.impact === 'positive').length;
     const negativeSignals = scan.signals.filter(s => ['critical', 'warning'].includes(s.impact)).length;
@@ -50,7 +50,7 @@ export default function Results({ scan }) {
     const vendors = vtUrlSignal?.meta_data?.vendors || {};
     const domainData = vtUrlSignal?.meta_data?.domain_info || vtDomainSignal?.meta_data || {};
 
-    // Gauge Logic
+    // Trust Score Gauge
     let gaugeColor = "text-red-500";
     if (scan.risk_level === 'safe') gaugeColor = "text-green-500";
     if (scan.risk_level === 'suspicious') gaugeColor = "text-yellow-500";
@@ -62,7 +62,6 @@ export default function Results({ scan }) {
     return (
         <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-blue-500/30 flex flex-col relative overflow-x-hidden print:bg-white print:text-black print:min-h-0 print:overflow-visible">
 
-            {/* Styles for Print / PDF Export */}
             <style>{`
                 @media print {
                     @page { margin: 15mm; size: A4; }
@@ -94,7 +93,7 @@ export default function Results({ scan }) {
                 .print-container { display: none; }
             `}</style>
 
-            {/* --- REPORT VIEW (Visible only on print) --- */}
+            {/* PRINT VIEW */}
             <div className="print-container font-mono bg-white text-black p-8 max-w-[210mm] mx-auto">
                 {/* Header */}
                 <div className="border-b-4 border-black pb-6 mb-8 flex justify-between items-end">
@@ -186,8 +185,7 @@ export default function Results({ scan }) {
             </div>
 
 
-            {/* --- WEB VIEW --- */}
-            {/* Navbar */}
+            {/* WEB VIEW */}
             <nav className="relative z-50 p-6 w-full border-b border-white/5 bg-[#0a0a0a]/50 backdrop-blur-md no-print">
                 <div className="max-w-7xl mx-auto flex justify-between items-center">
                     <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
@@ -329,9 +327,9 @@ export default function Results({ scan }) {
                                                     animate={{ opacity: 1, x: 0 }}
                                                     transition={{ delay: idx * 0.05 }}
                                                     className={`group hover:bg-blue-900/5 transition-all p-4 border-l-2 ${signal.impact === 'critical' ? 'border-l-red-500 bg-red-900/5 border border-red-900/10' :
-                                                            signal.impact === 'warning' ? 'border-l-yellow-500 bg-yellow-900/5 border border-yellow-900/10' :
-                                                                signal.impact === 'positive' ? 'border-l-green-500 bg-green-900/5 border border-green-900/10' :
-                                                                    'border-l-gray-600 bg-white/5 border border-white/5'
+                                                        signal.impact === 'warning' ? 'border-l-yellow-500 bg-yellow-900/5 border border-yellow-900/10' :
+                                                            signal.impact === 'positive' ? 'border-l-green-500 bg-green-900/5 border border-green-900/10' :
+                                                                'border-l-gray-600 bg-white/5 border border-white/5'
                                                         }`}
                                                 >
                                                     <div className="flex justify-between items-start">
@@ -339,8 +337,8 @@ export default function Results({ scan }) {
                                                             <div className="flex items-center gap-3 mb-2">
                                                                 <h4 className="text-white font-bold text-xs tracking-wide uppercase font-mono">{signal.type.replace(/_/g, ' ')}</h4>
                                                                 <span className={`text-[9px] font-bold px-1.5 py-0.5 border font-mono uppercase ${signal.impact === 'critical' ? 'text-red-500 border-red-500/30' :
-                                                                        signal.impact === 'positive' ? 'text-green-500 border-green-500/30' :
-                                                                            'text-gray-500 border-gray-600/30'
+                                                                    signal.impact === 'positive' ? 'text-green-500 border-green-500/30' :
+                                                                        'text-gray-500 border-gray-600/30'
                                                                     }`}>{signal.impact}</span>
                                                             </div>
                                                             <p className="text-gray-400 text-xs leading-relaxed font-mono">{signal.description}</p>
