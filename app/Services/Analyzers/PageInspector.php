@@ -73,14 +73,6 @@ class PageInspector implements AnalyzerInterface
                 ];
             }
 
-            // 4. Title Extraction (for BrandDetector later context, but we can store it or just use it here?)
-            // BrandDetector will probably do its own fetch or we should share the response.
-            // For MVP simplicity, BrandDetector can run independently or we pass data. 
-            // In a cleaner architecture, we'd cache the response.
-            // But let's keep robust: BrandDetector will likely try to use the same cached response or fetch again.
-            // Given "Async scanning only", separate jobs or cached resource is better. 
-            // Let's assume stateless for now.
-
         } catch (\Exception $e) {
             $signals[] = [
                 'type' => 'scan_error',

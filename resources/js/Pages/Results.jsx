@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { usePage, router, Link } from '@inertiajs/react';
-import Layout from './Layout';
 import { motion } from 'framer-motion';
 
 export default function Results({ scan }) {
@@ -19,241 +18,429 @@ export default function Results({ scan }) {
         }
     }, [scan.status]);
 
+    // --- Loading State ---
     if (scan.status !== 'completed' && scan.status !== 'failed') {
         return (
-            <Layout>
-                <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-                    <div className="relative w-24 h-24 mb-8">
-                        <div className="absolute inset-0 border-4 border-blue-500/30 rounded-full animate-ping"></div>
+            <div className="min-h-screen bg-[#0a0a0a] text-white font-sans flex flex-col items-center justify-center relative overflow-hidden">
+                <div className="relative z-10 text-center px-4">
+                    <div className="relative w-32 h-32 mx-auto mb-8">
+                        <div className="absolute inset-0 border-4 border-blue-600/30 rounded-full animate-ping"></div>
                         <div className="absolute inset-0 border-4 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
-                        <div className="absolute inset-2 bg-gray-800 rounded-full flex items-center justify-center">
-                            <span className="text-3xl">🔍</span>
+                        <div className="absolute inset-2 bg-[#0a0a0a] rounded-full flex items-center justify-center border border-blue-500/20 shadow-[0_0_40px_rgba(37,99,235,0.2)]">
+                            <span className="text-4xl animate-pulse">🛡️</span>
                         </div>
                     </div>
-                    <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-green-400 mb-4">
-                        Sedang Menganalisis...
-                    </h2>
-                    <p className="text-gray-400 max-w-md mx-auto mb-4">
-                        Kami sedang memindai domain, sertifikat SSL, dan pola keamanan lainnya. Mohon tunggu sebentar.
-                    </p>
+                    <h2 className="text-2xl font-bold text-white mb-2 tracking-widest uppercase font-mono">Initializing Deep Scan</h2>
+                    <p className="text-blue-400/60 font-mono text-xs uppercase tracking-wider"> querying cyber-intelligence databases...</p>
                 </div>
-            </Layout>
+            </div>
         );
     }
 
+    // --- Results Data ---
     const host = new URL(scan.normalized_url).hostname;
     const positiveSignals = scan.signals.filter(s => s.impact === 'positive').length;
     const negativeSignals = scan.signals.filter(s => ['critical', 'warning'].includes(s.impact)).length;
 
-    // Find detailed VT data for Security Tab
-    const vtUrlSignal = scan.signals.find(s => s.type.startsWith('vt_url'));
-    const vtDomainSignal = scan.signals.find(s => s.type.startsWith('vt_domain'));
+    // Correctly finding VT data - checking multiple potential types just in case
+    const vtUrlSignal = scan.signals.find(s => s.type.includes('vt_url'));
+    const vtDomainSignal = scan.signals.find(s => s.type.includes('domain') || s.type.includes('whois'));
+
+    // Fallback emptiness
     const vendors = vtUrlSignal?.meta_data?.vendors || {};
+    const domainData = vtUrlSignal?.meta_data?.domain_info || vtDomainSignal?.meta_data || {};
 
     // Gauge Logic
     let gaugeColor = "text-red-500";
     if (scan.risk_level === 'safe') gaugeColor = "text-green-500";
     if (scan.risk_level === 'suspicious') gaugeColor = "text-yellow-500";
 
-    // Gauge calculation
-    const radius = 90;
+    const radius = 80;
     const circumference = 2 * Math.PI * radius;
     const offset = circumference - (scan.final_score / 100) * circumference;
 
     return (
-        <Layout>
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="space-y-6"
-            >
+        <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-blue-500/30 flex flex-col relative overflow-x-hidden print:bg-white print:text-black print:min-h-0 print:overflow-visible">
+
+            {/* Styles for Print / PDF Export */}
+            <style>{`
+                @media print {
+                    @page { margin: 15mm; size: A4; }
+                    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                    body, html, #app { background-color: white !important; background: white !important; color: black !important; width: 100%; height: auto; overflow: visible; }
+                    .no-print, nav, .web-main, button, .tabs-container { display: none !important; }
+                    
+                    /* Force display block for print container */
+                    .print-container { display: block !important; visibility: visible !important; opacity: 1 !important; width: 100%; position: static; }
+                    
+                    /* Typography overrides */
+                    .print-container div, .print-container span, .print-container p, .print-container h1, .print-container h2, .print-container h3 {
+                        color: black !important;
+                        text-shadow: none !important;
+                    }
+                    
+                    /* Utility overrides */
+                    .text-white { color: black !important; }
+                    .text-gray-400, .text-gray-500, .text-gray-600 { color: #333 !important; }
+                    .bg-black, .bg-[#0a0a0a] { background-color: white !important; }
+                    .border-white\/5, .border-white\/10 { border-color: #ddd !important; }
+                    
+                    /* Specific table/grid fixes */
+                    .finding-row { break-inside: avoid; page-break-inside: avoid; }
+                    
+                    /* Hide web background elements */
+                    .absolute.inset-0 { display: none !important; }
+                }
+                .print-container { display: none; }
+            `}</style>
+
+            {/* --- REPORT VIEW (Visible only on print) --- */}
+            <div className="print-container font-mono bg-white text-black p-8 max-w-[210mm] mx-auto">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gray-800/50 p-6 rounded-2xl border border-gray-700 backdrop-blur-sm">
+                <div className="border-b-4 border-black pb-6 mb-8 flex justify-between items-end">
                     <div>
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-2xl md:text-3xl font-bold text-white break-all">
-                                {host}
-                            </h1>
-                            {scan.risk_level === 'safe' && <span className="px-3 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-full border border-green-500/30">AMAN</span>}
-                            {scan.risk_level === 'dangerous' && <span className="px-3 py-1 bg-red-500/20 text-red-400 text-xs font-bold rounded-full border border-red-500/30">BERBAHAYA</span>}
-                        </div>
-                        <p className="text-gray-400 text-sm mt-1">{scan.normalized_url}</p>
-                        <p className="text-gray-500 text-xs mt-2">ID Scan: #{scan.id} • {new Date(scan.created_at).toLocaleString()}</p>
+                        <h1 className="text-4xl font-black uppercase tracking-widest leading-none mb-2">Security<br />Report</h1>
+                        <p className="text-xs uppercase tracking-widest text-gray-600">Amangaknih.id Intelligence Unit</p>
                     </div>
-                    <div className="flex gap-3">
-                        <Link href="/" className="px-5 py-2.5 text-sm font-medium text-white bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors">
-                            Scan Baru
-                        </Link>
-                        <button onClick={() => window.print()} className="px-5 py-2.5 text-sm font-medium text-gray-900 bg-white hover:bg-gray-100 rounded-lg transition-colors">
-                            Cetak Laporan
-                        </button>
+                    <div className="text-right text-[10px] leading-tight text-gray-800">
+                        <p><strong>SCAN ID:</strong> #{scan.id}</p>
+                        <p><strong>DATE:</strong> {new Date().toLocaleDateString().toUpperCase()}</p>
+                        <p><strong>TARGET:</strong> {host}</p>
                     </div>
                 </div>
 
-                {/* Tabs */}
-                <div className="flex justify-center mb-6">
-                    <div className="flex p-1 bg-gray-800/50 rounded-xl border border-gray-700">
-                        {['overview', 'security', 'domain'].map((tab) => (
-                            <button
-                                key={tab}
-                                onClick={() => setActiveTab(tab)}
-                                className={`px-8 py-2.5 rounded-lg text-sm font-medium transition-all min-w-[120px] ${activeTab === tab
-                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40 transform scale-105'
-                                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
-                                    }`}
-                            >
-                                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                {/* Executive Summary */}
+                <div className="mb-8">
+                    <h3 className="text-xs font-bold uppercase border-b-2 border-black mb-3 pb-1">01 // Executive Summary</h3>
+                    <div className="bg-gray-100 p-4 border-l-4 border-black text-xs leading-relaxed text-justify text-black">
+                        {scan.risk_level === 'safe'
+                            ? "The analyzed domain exhibits a LOW RISK profile. All primary security checkpoints—including SSL validity, domain reputation, and threat intelligence feeds—returned negative for malicious indicators. Standard security hygiene is observed."
+                            : scan.risk_level === 'suspicious'
+                                ? "The analyzed domain exhibits a MODERATE RISK profile. Heuristics detected anomalies consistent with suspicious activity, such as recent registration or mixed vendor reputation. Caution is advised."
+                                : "CRITICAL ALERT: The analyzed domain exhibits a HIGH RISK profile. Confirmed malicious signatures or known phishing patterns were detected. Immediate access restriction is recommended."
+                        }
+                    </div>
+                </div>
+
+                {/* Score Dashboard */}
+                <div className="grid grid-cols-2 gap-6 mb-8">
+                    <div className="border border-black p-6 flex flex-col items-center justify-center">
+                        <span className="text-6xl font-black mb-2 text-black">{scan.final_score}</span>
+                        <span className="text-[10px] uppercase tracking-widest font-bold">Trust Score</span>
+                    </div>
+                    <div className="border border-black p-6 relative">
+                        <div className="flex justify-between items-center mb-2 border-b border-gray-200 pb-2">
+                            <span className="text-[10px] font-bold uppercase">Passed Checks</span>
+                            <span className="font-bold text-lg text-black">{positiveSignals}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-[10px] font-bold uppercase">Threats Found</span>
+                            <span className="font-bold text-lg text-black">{negativeSignals}</span>
+                        </div>
+                        <div className="absolute top-0 right-0 bg-black text-white text-[10px] px-2 py-1 uppercase font-bold">
+                            {scan.risk_level}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Detailed Findings */}
+                <div className="mb-8">
+                    <h3 className="text-xs font-bold uppercase border-b-2 border-black mb-3 pb-1">02 // Detailed Analysis Ledger</h3>
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="border-b-2 border-black text-[9px] uppercase">
+                                <th className="py-2 w-24">Severity</th>
+                                <th className="py-2 w-48">Vector</th>
+                                <th className="py-2">Observation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {scan.signals.map((s, i) => (
+                                <tr key={i} className="border-b border-gray-200 text-[10px] finding-row">
+                                    <td className={`py-2 font-bold uppercase ${s.impact === 'critical' ? 'text-black' : 'text-gray-700'}`}>
+                                        {s.impact === 'critical' ? 'CRITICAL' : s.impact}
+                                    </td>
+                                    <td className="py-2 font-mono text-[9px] uppercase">{s.type.replace(/_/g, ' ')}</td>
+                                    <td className="py-2 text-gray-800">{s.description}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Domain Info */}
+                <div className="grid grid-cols-2 gap-4 mb-8 text-[10px]">
+                    <div>
+                        <h4 className="font-bold border-b border-gray-300 mb-2 uppercase">Registrar Information</h4>
+                        <p className="font-mono text-gray-800">{domainData.registrar || 'DATA REDACTED'}</p>
+                    </div>
+                    <div>
+                        <h4 className="font-bold border-b border-gray-300 mb-2 uppercase">Creation Date</h4>
+                        <p className="font-mono text-gray-800">{domainData.creation_date ? new Date(domainData.creation_date * 1000).toUTCString() : 'UNKNOWN'}</p>
+                    </div>
+                </div>
+
+                <div className="text-center pt-8 border-t border-gray-300 text-[8px] uppercase text-gray-500">
+                    Proprietary Automated Analysis • Generated by AmanGakNih.id • {new Date().getFullYear()}
+                </div>
+            </div>
+
+
+            {/* --- WEB VIEW --- */}
+            {/* Navbar */}
+            <nav className="relative z-50 p-6 w-full border-b border-white/5 bg-[#0a0a0a]/50 backdrop-blur-md no-print">
+                <div className="max-w-7xl mx-auto flex justify-between items-center">
+                    <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                        <div className="w-10 h-10 bg-blue-900/30 border border-blue-500/50 flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.3)]">
+                            <span className="text-xl">🛡️</span>
+                        </div>
+                        <span className="text-xl font-bold tracking-tight text-white uppercase font-mono">
+                            amangaknih.id
+                        </span>
+                    </Link>
+                    <a href="https://github.com/itzcaesar/aman-gak-nih" className="text-sm font-bold text-gray-400 hover:text-white transition-colors border border-white/10 px-4 py-2 hover:bg-white/5 uppercase tracking-wider font-mono">
+                        GitHub
+                    </a>
+                </div>
+            </nav>
+
+            <main className="web-main relative z-10 flex-grow px-4 py-8 md:py-12 max-w-7xl mx-auto w-full no-print">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-8"
+                >
+                    {/* Main Header Card */}
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-[#0a0a0a] p-8 rounded-none border-l-4 border-l-blue-600 border-y border-r border-y-white/5 border-r-white/5 shadow-2xl relative overflow-hidden">
+                        {/* Mesh grid background pattern */}
+                        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
+
+                        <div className="relative z-10">
+                            <div className="flex items-center gap-4 flex-wrap">
+                                <h1 className="text-2xl md:text-3xl font-bold text-white break-all tracking-tight font-mono">
+                                    {host}
+                                </h1>
+                                {scan.risk_level === 'safe' && <span className="px-3 py-1 bg-green-900/20 text-green-400 text-xs font-bold border border-green-500/30 tracking-widest uppercase font-mono">SECURE</span>}
+                                {scan.risk_level === 'suspicious' && <span className="px-3 py-1 bg-yellow-900/20 text-yellow-400 text-xs font-bold border border-yellow-500/30 tracking-widest uppercase font-mono">SUSPICIOUS</span>}
+                                {scan.risk_level === 'dangerous' && <span className="px-3 py-1 bg-red-900/20 text-red-500 text-xs font-bold border border-red-500/50 tracking-widest uppercase animate-pulse font-mono">DANGEROUS</span>}
+                            </div>
+                            <p className="text-blue-500/50 text-xs mt-2 font-mono uppercase tracking-wider">{scan.normalized_url}</p>
+                        </div>
+                        <div className="flex gap-3 w-full md:w-auto relative z-10">
+                            <Link href="/" className="px-6 py-3 text-xs font-bold text-blue-400 bg-blue-900/10 hover:bg-blue-900/20 border border-blue-500/30 transition-all uppercase tracking-wider font-mono">
+                                New Scan
+                            </Link>
+                            <button onClick={() => window.print()} className="px-6 py-3 text-xs font-bold text-black bg-blue-600 hover:bg-blue-500 transition-all uppercase tracking-wider shadow-[0_0_15px_rgba(59,130,246,0.5)] font-mono">
+                                Export Report
                             </button>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                    {/* Left Column: Gauge (Sticky) */}
-                    <div className="lg:col-span-1 space-y-6">
-                        {/* Score Card */}
-                        <div className="bg-gray-800/80 p-8 rounded-2xl border border-gray-700 text-center relative overflow-hidden">
-                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-green-500"></div>
-
-                            <h3 className="text-gray-400 font-medium uppercase tracking-wider text-sm mb-6">Trust Score</h3>
-
-                            <div className="relative w-48 h-48 mx-auto mb-6 flex items-center justify-center">
-                                {/* SVG Gauge */}
-                                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 200 200">
-                                    <circle cx="100" cy="100" r={radius} stroke="currentColor" strokeWidth="12" fill="transparent" className="text-gray-700" />
-                                    <motion.circle
-                                        initial={{ strokeDashoffset: circumference }}
-                                        animate={{ strokeDashoffset: offset }}
-                                        transition={{ duration: 1.5, ease: "easeOut" }}
-                                        cx="100" cy="100" r={radius}
-                                        stroke="currentColor" strokeWidth="12" fill="transparent"
-                                        strokeDasharray={circumference}
-                                        strokeDashoffset={offset}
-                                        strokeLinecap="round"
-                                        className={gaugeColor}
-                                    />
-                                </svg>
-
-                                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                    <span className="text-6xl font-extrabold text-white">{scan.final_score}</span>
-                                    <span className="text-sm text-gray-500">/ 100</span>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4 mt-8">
-                                <div className="bg-green-500/10 p-3 rounded-lg border border-green-500/10">
-                                    <span className="block text-2xl font-bold text-green-400">{positiveSignals}</span>
-                                    <span className="text-[10px] text-green-400/60 uppercase font-bold tracking-wider">Aman</span>
-                                </div>
-                                <div className="bg-red-500/10 p-3 rounded-lg border border-red-500/10">
-                                    <span className="block text-2xl font-bold text-red-400">{negativeSignals}</span>
-                                    <span className="text-[10px] text-red-400/60 uppercase font-bold tracking-wider">Resiko</span>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
-                    {/* Right Column: Tab Content */}
-                    <div className="lg:col-span-2 space-y-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                        {activeTab === 'overview' && (
-                            <div className="space-y-4">
-                                {scan.signals.length === 0 ? (
-                                    <div className="p-8 text-center text-gray-500 bg-gray-800 rounded-xl border border-gray-700">Tidak ada sinyal.</div>
-                                ) : (
-                                    scan.signals.sort((a, b) => b.weight - a.weight).map((signal, idx) => (
-                                        <motion.div
-                                            key={idx}
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: idx * 0.05 }}
-                                            className={`flex items-start gap-4 p-4 rounded-xl border ${signal.impact === 'critical' ? 'bg-red-900/10 border-red-500/20' :
-                                                signal.impact === 'warning' ? 'bg-yellow-900/10 border-yellow-500/20' :
-                                                    signal.impact === 'positive' ? 'bg-green-900/10 border-green-500/20' :
-                                                        'bg-gray-800 border-gray-700'
+                        {/* LEFT COLUMN: Trust Score & Summary */}
+                        <div className="lg:col-span-1 space-y-6">
+
+                            {/* Trust Score Card */}
+                            <div className="bg-[#0a0a0a] p-8 border border-blue-900/30 relative overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)] relative">
+                                <div className="absolute top-0 right-0 p-2 opacity-20">
+                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-blue-500"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                </div>
+                                <h3 className="text-blue-500 font-bold uppercase tracking-widest text-xs mb-8 text-center border-b border-blue-900/30 pb-4 font-mono">Security Trust Score</h3>
+
+                                <div className="relative w-56 h-56 mx-auto mb-8 flex items-center justify-center">
+                                    {/* SVG Gauge */}
+                                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 200 200">
+                                        <circle cx="100" cy="100" r={radius} stroke="#111827" strokeWidth="8" fill="transparent" className="gauge-bg" />
+                                        <motion.circle
+                                            initial={{ strokeDashoffset: circumference }}
+                                            animate={{ strokeDashoffset: offset }}
+                                            transition={{ duration: 1.5, ease: "easeOut" }}
+                                            cx="100" cy="100" r={radius}
+                                            stroke="currentColor" strokeWidth="8" fill="transparent"
+                                            strokeDasharray={circumference}
+                                            strokeDashoffset={offset}
+                                            strokeLinecap="round"
+                                            className={gaugeColor}
+                                            style={{ filter: "drop-shadow(0 0 10px currentColor)" }}
+                                        />
+                                    </svg>
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                        <span className="text-7xl font-bold text-white tracking-tighter font-mono">{scan.final_score}</span>
+                                        <span className="text-xs text-gray-500 font-mono uppercase">/ 100</span>
+                                    </div>
+                                </div>
+
+                                {/* Stats */}
+                                <div className="flex justify-between border-t border-blue-900/30 pt-6">
+                                    <div className="text-center w-1/2 border-r border-blue-900/30">
+                                        <span className="block text-2xl font-bold text-green-500 font-mono">{positiveSignals}</span>
+                                        <span className="text-[10px] text-gray-500 uppercase tracking-wider font-mono">Passed</span>
+                                    </div>
+                                    <div className="text-center w-1/2">
+                                        <span className="block text-2xl font-bold text-red-500 font-mono">{negativeSignals}</span>
+                                        <span className="text-[10px] text-gray-500 uppercase tracking-wider font-mono">Issues</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Info Box */}
+                            <div className="bg-blue-900/5 border border-blue-500/20 p-4 text-[10px] text-blue-300 font-mono leading-relaxed text-justify relative">
+                                <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-blue-500"></div>
+                                <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-blue-500"></div>
+                                This report is generated based on real-time heuristics and third-party threat intelligence.
+                                Scores are calculated using a weighted algorithm prioritizing SSL validity, domain reputation, and historical behavior.
+                            </div>
+
+                        </div>
+
+                        {/* RIGHT COLUMN: Details & Tabs */}
+                        <div className="lg:col-span-2 space-y-6">
+
+                            {/* Tab Switcher - Centered Top */}
+                            <div className="flex justify-start tabs-container">
+                                <div className="flex gap-2">
+                                    {['overview', 'security', 'domain'].map((tab) => (
+                                        <button
+                                            key={tab}
+                                            onClick={() => setActiveTab(tab)}
+                                            className={`px-6 py-2 text-xs font-bold uppercase tracking-wider transition-all border font-mono ${activeTab === tab
+                                                ? 'bg-blue-600 text-black border-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.3)]'
+                                                : 'text-gray-500 hover:text-white border-white/10 hover:border-white/30 bg-white/5'
                                                 }`}
                                         >
-                                            <div className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${signal.impact === 'critical' ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' :
-                                                signal.impact === 'warning' ? 'bg-yellow-500' : 'bg-green-500'
-                                                }`} />
-                                            <div>
-                                                <h4 className="text-white font-medium text-sm">{signal.type.replace(/_/g, ' ').toUpperCase()}</h4>
-                                                <p className="text-gray-400 text-sm mt-1">{signal.description}</p>
-                                            </div>
-                                        </motion.div>
-                                    ))
-                                )}
-                            </div>
-                        )}
-
-                        {activeTab === 'security' && (
-                            <div className="bg-gray-800/50 rounded-2xl border border-gray-700 p-6">
-                                <h3 className="text-white font-bold mb-4 flex items-center gap-2">
-                                    <span>🛡️</span> Security Vendors (VirusTotal)
-                                </h3>
-                                {Object.keys(vendors).length > 0 ? (
-                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                        {Object.entries(vendors).map(([vendor, result]) => (
-                                            <div key={vendor} className="flex items-center justify-between bg-gray-900/50 p-2 px-3 rounded text-xs border border-gray-700/50">
-                                                <span className="text-gray-300 truncate max-w-[100px]">{vendor}</span>
-                                                <span className={`font-bold ${result.category === 'malicious' ? 'text-red-400' :
-                                                    result.category === 'suspicious' ? 'text-yellow-400' : 'text-green-400'
-                                                    }`}>
-                                                    {result.result === 'clean' ? 'Safe' : result.result}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-10 text-gray-500">
-                                        <p>Data vendor keamanan tidak tersedia atau belum dipindai sepenuhnya.</p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {activeTab === 'domain' && (
-                            <div className="bg-gray-800/50 rounded-2xl border border-gray-700 p-6 space-y-6">
-                                <div>
-                                    <h3 className="text-white font-bold mb-2">Domain Stats</h3>
-                                    {vtDomainSignal?.meta_data ? (
-                                        <div className="grid grid-cols-2 gap-4 text-sm">
-                                            <div className="bg-gray-900 p-3 rounded border border-gray-700">
-                                                <span className="text-gray-500 block">Creation Date</span>
-                                                <span className="text-white">
-                                                    {vtDomainSignal.meta_data.creation_date
-                                                        ? new Date(vtDomainSignal.meta_data.creation_date * 1000).toLocaleDateString()
-                                                        : 'Unknown'
-                                                    }
-                                                </span>
-                                            </div>
-                                            <div className="bg-gray-900 p-3 rounded border border-gray-700">
-                                                <span className="text-gray-500 block">Categories</span>
-                                                <span className="text-white">
-                                                    {Object.keys(vtDomainSignal.meta_data.categories || {}).join(', ') || 'Uncategorized'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <p className="text-gray-500 text-sm">Data domain detail tidak ditemukan.</p>
-                                    )}
+                                            {tab}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
-                        )}
+
+                            {/* Content Area */}
+                            <div className="min-h-[400px]">
+                                {activeTab === 'overview' && (
+                                    <div className="space-y-3">
+                                        {scan.signals.length === 0 ? (
+                                            <div className="p-12 text-center text-gray-500 border border-dashed border-white/10 font-mono text-sm">NO SIGNALS DETECTED</div>
+                                        ) : (
+                                            scan.signals.sort((a, b) => b.weight - a.weight).map((signal, idx) => (
+                                                <motion.div
+                                                    key={idx}
+                                                    initial={{ opacity: 0, x: -10 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    transition={{ delay: idx * 0.05 }}
+                                                    className={`group hover:bg-blue-900/5 transition-all p-4 border-l-2 ${signal.impact === 'critical' ? 'border-l-red-500 bg-red-900/5 border border-red-900/10' :
+                                                            signal.impact === 'warning' ? 'border-l-yellow-500 bg-yellow-900/5 border border-yellow-900/10' :
+                                                                signal.impact === 'positive' ? 'border-l-green-500 bg-green-900/5 border border-green-900/10' :
+                                                                    'border-l-gray-600 bg-white/5 border border-white/5'
+                                                        }`}
+                                                >
+                                                    <div className="flex justify-between items-start">
+                                                        <div>
+                                                            <div className="flex items-center gap-3 mb-2">
+                                                                <h4 className="text-white font-bold text-xs tracking-wide uppercase font-mono">{signal.type.replace(/_/g, ' ')}</h4>
+                                                                <span className={`text-[9px] font-bold px-1.5 py-0.5 border font-mono uppercase ${signal.impact === 'critical' ? 'text-red-500 border-red-500/30' :
+                                                                        signal.impact === 'positive' ? 'text-green-500 border-green-500/30' :
+                                                                            'text-gray-500 border-gray-600/30'
+                                                                    }`}>{signal.impact}</span>
+                                                            </div>
+                                                            <p className="text-gray-400 text-xs leading-relaxed font-mono">{signal.description}</p>
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            ))
+                                        )}
+                                    </div>
+                                )}
+
+                                {activeTab === 'security' && (
+                                    <div className="bg-[#0a0a0a] border border-blue-900/30 p-6 relative">
+                                        <div className="absolute top-0 right-0 w-4 h-4 border-t border-r border-blue-500/50"></div>
+                                        <div className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-blue-500/50"></div>
+
+                                        <h3 className="text-blue-400 font-bold mb-6 flex items-center gap-3 text-xs uppercase tracking-wider border-b border-blue-900/30 pb-4 font-mono">
+                                            <span>🛡️</span> Threat Intelligence (VirusTotal)
+                                        </h3>
+
+                                        {Object.keys(vendors).length > 0 ? (
+                                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                                {Object.entries(vendors).map(([vendor, result]) => (
+                                                    <div key={vendor} className="flex items-center justify-between bg-black p-2 px-3 border border-white/10 hover:border-blue-500/50 transition-colors">
+                                                        <span className="text-gray-400 truncate max-w-[80px] font-mono text-[10px] uppercase">{vendor}</span>
+                                                        <span className={`font-bold text-[10px] font-mono uppercase ${result.category === 'malicious' ? 'text-red-500 animate-pulse' :
+                                                            result.category === 'suspicious' ? 'text-yellow-500' : 'text-green-500'
+                                                            }`}>
+                                                            {result.result === 'clean' ? 'CLEAN' : result.result}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-16 text-gray-500 border border-dashed border-white/10">
+                                                <p className="mb-2 text-3xl opacity-50">📡</p>
+                                                <p className="uppercase tracking-widest text-xs font-mono">No vendor data available</p>
+                                                <p className="text-[10px] mt-2 text-gray-600 font-mono">Ensure scanning is complete.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {activeTab === 'domain' && (
+                                    <div className="bg-[#0a0a0a] border border-blue-900/30 p-6 space-y-6 relative">
+                                        <div className="absolute top-0 right-0 w-4 h-4 border-t border-r border-blue-500/50"></div>
+                                        <div className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-blue-500/50"></div>
+
+                                        <div>
+                                            <h3 className="text-blue-400 font-bold mb-6 flex items-center gap-3 text-xs uppercase tracking-wider border-b border-blue-900/30 pb-4 font-mono">
+                                                <span>🌐</span> Domain Reconnaissance
+                                            </h3>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="bg-white/5 p-4 border-l-2 border-l-blue-500 border border-white/5">
+                                                    <span className="text-gray-500 text-[10px] uppercase tracking-widest font-bold block mb-1 font-mono">Creation Date</span>
+                                                    <span className="text-white text-sm font-mono">
+                                                        {domainData.creation_date
+                                                            ? new Date(domainData.creation_date * 1000).toLocaleDateString(undefined, { dateStyle: 'medium' })
+                                                            : 'UNKNOWN / HIDDEN'
+                                                        }
+                                                    </span>
+                                                </div>
+
+                                                <div className="bg-white/5 p-4 border-l-2 border-l-blue-500 border border-white/5">
+                                                    <span className="text-gray-500 text-[10px] uppercase tracking-widest font-bold block mb-1 font-mono">Registrar</span>
+                                                    <span className="text-white text-sm font-mono truncate block" title={domainData.registrar}>
+                                                        {domainData.registrar || 'UNKNOWN'}
+                                                    </span>
+                                                </div>
+
+                                                <div className="bg-white/5 p-4 border border-white/5 md:col-span-2">
+                                                    <span className="text-gray-500 text-[10px] uppercase tracking-widest font-bold block mb-3 font-mono">Reputation Tags</span>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {Object.keys(domainData.categories || {}).length > 0 ?
+                                                            Object.keys(domainData.categories).map(cat => (
+                                                                <span key={cat} className="px-2 py-1 bg-blue-900/20 text-blue-400 text-[10px] border border-blue-500/30 uppercase tracking-wide font-mono">
+                                                                    {domainData.categories[cat]}
+                                                                </span>
+                                                            ))
+                                                            : <span className="text-gray-600 text-xs italic font-mono">No specific categories tags found.</span>}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
-                </div>
-
-                {/* Disclaimer */}
-                <div className="mt-8 pt-6 border-t border-gray-800 text-center">
-                    <p className="text-xs text-gray-600 max-w-3xl mx-auto">
-                        <strong>Disclaimer:</strong> AmanGakNih.id menggunakan algoritma otomatis untuk memberikan estimasi skor keamanan.
-                        Skor hijau tidak menjamin 100% aman, dan skor merah bisa jadi false positive.
-                        Gunakan penilaian pribadi Anda dan jangan pernah memasukkan kredensial sensitif di website yang Anda ragukan.
-                    </p>
-                </div>
-            </motion.div>
-        </Layout>
+                    {/* Disclaimer */}
+                    <div className="mt-12 pt-8 border-t border-white/5 text-center no-print">
+                        <p className="text-[10px] text-gray-600 max-w-2xl mx-auto uppercase tracking-wider font-mono">
+                            <strong>Security Disclaimer:</strong> Analysis provided for informational purposes only.
+                            Automated heuristics may produce false positives. Always verify critical indicators manually.
+                        </p>
+                    </div>
+                </motion.div>
+            </main>
+        </div>
     );
 }

@@ -1,7 +1,6 @@
 import React from 'react';
 import { useForm, Link } from '@inertiajs/react';
 import { motion } from 'framer-motion';
-import Layout from './Layout';
 
 export default function Welcome() {
     const { data, setData, post, processing, errors } = useForm({
@@ -14,86 +13,130 @@ export default function Welcome() {
     };
 
     return (
-        <Layout>
-            <section className="text-center py-20 px-4">
+        <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-blue-500/30 flex flex-col relative overflow-x-hidden">
+
+            {/* Navbar */}
+            <nav className="relative z-50 p-6 w-full border-b border-white/5 bg-[#0a0a0a]/50 backdrop-blur-md">
+                <div className="max-w-7xl mx-auto flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-900/30 border border-blue-500/50 flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.3)]">
+                            <span className="text-xl">🛡️</span>
+                        </div>
+                        <span className="text-xl font-bold tracking-tight text-white uppercase font-mono">
+                            amangaknih.id
+                        </span>
+                    </div>
+                    <a href="https://github.com/itzcaesar/aman-gak-nih" className="text-sm font-bold text-gray-400 hover:text-white transition-colors border border-white/10 px-4 py-2 hover:bg-white/5 uppercase tracking-wider font-mono">
+                        GitHub
+                    </a>
+                </div>
+            </nav>
+
+            {/* Main Content */}
+            <main className="relative z-10 flex-grow flex flex-col items-center justify-center px-4 py-20">
+
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8 }}
-                    className="max-w-3xl mx-auto space-y-6 relative z-10"
+                    className="max-w-4xl w-full text-center space-y-10"
                 >
-                    {/* Badge */}
-                    <span className="bg-blue-900/50 text-blue-300 text-xs font-medium inline-flex items-center px-2.5 py-0.5 rounded border border-blue-800 mb-4">
-                        <svg className="w-2.5 h-2.5 me-1.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M10 0a10 10 0 1 0 10 10A10.011 10.011 0 0 0 10 0Zm3.982 13.982a1 1 0 0 1-1.414 0l-3.274-3.274A1.012 1.012 0 0 1 9 10V6a1 1 0 0 1 2 0v3.586l2.982 2.982a1 1 0 0 1 0 1.414Z" />
-                        </svg>
-                        Real-time Phishing Detection
-                    </span>
+                    {/* Status Pill - Blocky Style */}
+                    <div className="inline-flex items-center gap-3 px-4 py-1.5 bg-blue-900/10 border border-blue-500/30 backdrop-blur-md">
+                        <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full bg-blue-400 opacity-75"></span>
+                            <span className="relative inline-flex h-2 w-2 bg-blue-500"></span>
+                        </span>
+                        <span className="text-xs font-mono text-blue-400 tracking-widest uppercase">SYSTEM ONLINE // READY TO SCAN</span>
+                    </div>
 
-                    {/* Hero Title */}
-                    <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-white mb-4">
-                        Cek Keamanan <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-green-400">Website</span>
-                        <br />Sebelum Anda Klik.
+                    {/* Headline */}
+                    <h1 className="text-5xl md:text-7xl font-bold tracking-tighter text-white leading-tight">
+                        VERIFY DIGITAL <span className="text-transparent bg-clip-text bg-gradient-to-b from-blue-400 to-blue-600">TRUST</span>
                     </h1>
 
-                    <p className="text-lg text-gray-400 max-w-2xl mx-auto mb-10">
-                        Analisis risiko penipuan, phishing, dan keamanan SSL dengan teknologi pemindaian cerdas. Gratis untuk semua orang.
+                    <p className="text-lg text-gray-400 font-mono text-sm max-w-xl mx-auto leading-relaxed border-l-2 border-blue-500/30 pl-4 text-left md:text-center md:border-l-0 md:pl-0">
+                        ANALYZE SUSPICIOUS LINKS WITH ADVANCED THREAT INTELLIGENCE.
+                        DETECT PHISHING, MALWARE, AND FRAUD IN REAL-TIME.
                     </p>
 
-                    {/* Search Box */}
-                    <div className="relative max-w-2xl mx-auto">
-                        <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-green-600 rounded-lg blur opacity-40 animate-pulse transition duration-1000 group-hover:opacity-100 duration-200"></div>
+                    {/* Modern Input Section - Boxy */}
+                    <div className="mt-12 max-w-xl mx-auto relative group z-20">
 
-                        <form onSubmit={handleSubmit} className="relative bg-gray-900 rounded-lg p-2 flex items-center shadow-xl border border-gray-700">
-                            <div className="flex-grow">
-                                <div className="absolute inset-y-0 start-0 flex items-center ps-4 pointer-events-none">
-                                    <svg className="w-5 h-5 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
-                                    </svg>
-                                </div>
-                                <input
-                                    type="text"
-                                    value={data.url}
-                                    onChange={e => setData('url', e.target.value)}
-                                    className="block w-full p-4 ps-12 text-md text-white bg-transparent border-none focus:ring-0 placeholder-gray-500 focus:outline-none"
-                                    placeholder="Tempel URL di sini (contoh: https://tokopedia-promo.com)"
-                                    required
-                                    autoComplete="off"
-                                />
+                        <form onSubmit={handleSubmit} className="relative flex items-center bg-[#0a0a0a] border border-blue-900/50 focus-within:border-blue-500 transition-all shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+                            {/* Accent Line */}
+                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600"></div>
+
+                            <div className="pl-6 text-blue-500">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                             </div>
+
+                            <input
+                                type="text"
+                                value={data.url}
+                                onChange={e => setData('url', e.target.value)}
+                                className="w-full bg-transparent border-none text-white text-lg placeholder-gray-600 px-4 py-6 focus:ring-0 font-mono outline-none"
+                                placeholder="ENTER TARGET URL..."
+                                required
+                                autoFocus
+                                spellCheck="false"
+                            />
+
                             <button
                                 type="submit"
                                 disabled={processing}
-                                className="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-800 font-medium rounded-lg text-sm px-6 py-3 ml-2 transition-all disabled:opacity-50"
+                                className="mr-2 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-black font-bold uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                             >
-                                {processing ? 'Menganalisis...' : 'Analisis'}
+                                {processing ? (
+                                    <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                ) : 'SCAN'}
                             </button>
                         </form>
                     </div>
 
-                    {errors.url && <p className="mt-2 text-sm text-red-500">{errors.url}</p>}
+                    {errors.url && (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-4 text-red-500 text-xs font-mono bg-red-900/10 inline-block px-4 py-2 border border-red-500/30 uppercase">
+                            ⚠️ {errors.url}
+                        </motion.div>
+                    )}
 
-                    {/* Features Grid (Mini) */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-12 text-center text-sm text-gray-400">
-                        <div className="flex flex-col items-center">
-                            <span className="p-2 rounded-full bg-gray-800 mb-2">🔒</span>
-                            SSL Checker
+                    {/* Features Grid - Technical/Boxy */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-20 pt-10 border-t border-white/5">
+                        <div className="flex flex-col items-center p-6 border border-white/5 hover:border-blue-500/30 transition-colors group cursor-default">
+                            <span className="text-2xl mb-4 text-gray-500 group-hover:text-blue-400 transition-colors">🔒</span>
+                            <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold font-mono">SSL Analysis</span>
+                            <span className="text-sm font-bold text-white mt-2 group-hover:text-blue-400">GRADE A+</span>
                         </div>
-                        <div className="flex flex-col items-center">
-                            <span className="p-2 rounded-full bg-gray-800 mb-2">🕵️</span>
-                            Whois Age
+                        <div className="flex flex-col items-center p-6 border border-white/5 hover:border-blue-500/30 transition-colors group cursor-default">
+                            <span className="text-2xl mb-4 text-gray-500 group-hover:text-blue-400 transition-colors">📅</span>
+                            <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold font-mono">Domain Age</span>
+                            <span className="text-sm font-bold text-white mt-2 group-hover:text-blue-400">WHOIS CHECK</span>
                         </div>
-                        <div className="flex flex-col items-center">
-                            <span className="p-2 rounded-full bg-gray-800 mb-2">🚫</span>
-                            Phishing Detect
+                        <div className="flex flex-col items-center p-6 border border-white/5 hover:border-blue-500/30 transition-colors group cursor-default">
+                            <span className="text-2xl mb-4 text-gray-500 group-hover:text-blue-400 transition-colors">⚡</span>
+                            <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold font-mono">Fast Scan</span>
+                            <span className="text-sm font-bold text-white mt-2 group-hover:text-blue-400">&lt; 5 SECONDS</span>
                         </div>
-                        <div className="flex flex-col items-center">
-                            <span className="p-2 rounded-full bg-gray-800 mb-2">🏢</span>
-                            Brand Match
+                        <div className="flex flex-col items-center p-6 border border-white/5 hover:border-blue-500/30 transition-colors group cursor-default">
+                            <span className="text-2xl mb-4 text-gray-500 group-hover:text-blue-400 transition-colors">🤖</span>
+                            <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold font-mono">AI Engine</span>
+                            <span className="text-sm font-bold text-white mt-2 group-hover:text-blue-400">ACTIVE</span>
                         </div>
                     </div>
+
                 </motion.div>
-            </section>
-        </Layout>
+            </main>
+
+            {/* Footer */}
+            <footer className="relative z-10 border-t border-white/5 bg-[#0a0a0a] py-8">
+                <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center text-xs text-gray-600 font-mono uppercase tracking-wider">
+                    <p>© {new Date().getFullYear()} AMANGAKNIH.ID // OPEN SOURCE SECURITY</p>
+                    <div className="flex gap-6 mt-4 md:mt-0">
+                        <span>POWERED BY VIRUSTOTAL</span>
+                        <span>GOOGLE SAFE BROWSING</span>
+                    </div>
+                </div>
+            </footer>
+        </div>
     );
 }
