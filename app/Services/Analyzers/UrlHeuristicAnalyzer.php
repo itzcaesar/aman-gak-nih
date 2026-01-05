@@ -78,7 +78,7 @@ class UrlHeuristicAnalyzer implements AnalyzerInterface
         if (count($parts) > 3) {
             $signals[] = [
                 'type' => 'deep_subdomain',
-                'weight' => -10,
+                'weight' => -5, // Changed from -10 to -5
                 'impact' => 'warning',
                 'description' => 'Menggunakan subdomain yang sangat dalam (' . count($parts) . ' level).'
             ];
@@ -112,7 +112,7 @@ class UrlHeuristicAnalyzer implements AnalyzerInterface
         if (str_starts_with($host, 'xn--')) {
             $signals[] = [
                 'type' => 'punycode_domain',
-                'weight' => -10,
+                'weight' => -10, // Penalty remains -10
                 'impact' => 'warning',
                 'description' => 'Nama domain menggunakan Punycode (karakter non-Latin), mungkin teknik homoglyph.'
             ];

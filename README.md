@@ -91,17 +91,19 @@ npm run dev
 
 ## ⚖️ Sistem Scoring
 
-Sistem menggunakan **Base Score 60** yang akan bertambah atau berkurang berdasarkan sinyal:
+Sistem menggunakan **Base Score 80** yang akan bertambah atau berkurang berdasarkan sinyal dan konsensus vendor:
 
 <div align="center">
 
 | Skor | Level Risiko | Indikator |
 | :---: | :--- | :--- |
-| **0 - 39** | ❌ **BERBAHAYA** | Domain curian, malware terdeteksi, atau impersonasi brand. |
-| **40 - 69** | ⚠️ **MENCURIGAKAN** | Domain baru, tidak ada SSL, atau pola URL aneh. |
-| **70 - 100** | ✅ **RELATIF AMAN** | Domain tua, SSL valid, dan tidak ada sinyal negatif. |
+| **0 - 39** | 🚨 **HIGH RISK** | > 10 Vendor Security Flag, Malware, atau Impersonasi Brand. |
+| **40 - 74** | ⚠️ **NEUTRAL / UNKNOWN** | Domain baru, < 5 Vendor Flag (False Positive), atau data kurang. |
+| **75 - 100** | ✅ **LIKELY SAFE** | Domain terpercaya, SSL valid, dan Konsensus Komunitas Positif. |
 
 </div>
+
+> **Dynamic Scoring**: Penalti poin kini bersifat dinamis berdasarkan jumlah vendor keamanan yang mendeteksi ancaman (-5 poin per vendor), memastikan situs baru dengan sedikit *false positive* tidak langsung dianggap berbahaya.
 
 ## 📝 Disclaimer
 

@@ -15,7 +15,7 @@ class RiskScoringService
     public function calculate(Scan $scan): void
     {
         $signals = $scan->signals;
-        $baseScore = 70; // Start with benefit of the doubt
+        $baseScore = 80; // Start with benefit of the doubt (Fairer for new sites)
         $totalWeight = 0;
 
         foreach ($signals as $signal) {
@@ -27,13 +27,13 @@ class RiskScoringService
         // Clamp 0-100
         $finalScore = max(0, min(100, $finalScore));
 
-        // Determine Level - adjusted thresholds
-        if ($finalScore < 30) {
-            $level = 'dangerous'; // Berbahaya - only truly bad sites
-        } elseif ($finalScore < 60) {
-            $level = 'suspicious'; // Mencurigakan - proceed with caution
+        // Determine Level - adjusted thresholds for fairness
+        if ($finalScore < 40) {
+            $level = 'dangerous'; // Berbahaya - consistently bad signals
+        } elseif ($finalScore < 75) {
+            $level = 'suspicious'; // Mencurigakan - some flags or brand new
         } else {
-            $level = 'safe'; // Relatif Aman
+            $level = 'safe'; // Relatif Aman - default for neutral/clean sites
         }
 
         $scan->update([

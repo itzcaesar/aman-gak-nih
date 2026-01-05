@@ -240,7 +240,7 @@ export default function Results({ scan }) {
                         {scan.risk_level === 'safe'
                             ? "The analyzed domain exhibits a LOW RISK profile. All primary security checkpoints—including SSL validity, domain reputation, and threat intelligence feeds—returned negative for malicious indicators. Standard security hygiene is observed."
                             : scan.risk_level === 'suspicious'
-                                ? "The analyzed domain exhibits a MODERATE RISK profile. Heuristics detected anomalies consistent with suspicious activity, such as recent registration or mixed vendor reputation. Caution is advised."
+                                ? "The analyzed domain exhibits a NEUTRAL / UNKNOWN profile. Heuristics detected insufficient data or minor anomalies (e.g. new domain) but no critical threats. Caution is advised."
                                 : "CRITICAL ALERT: The analyzed domain exhibits a HIGH RISK profile. Confirmed malicious signatures or known phishing patterns were detected. Immediate access restriction is recommended."
                         }
                     </div>
@@ -262,7 +262,7 @@ export default function Results({ scan }) {
                             <span className="font-bold text-lg text-black">{negativeSignals}</span>
                         </div>
                         <div className="absolute top-0 right-0 bg-black text-white text-[10px] px-2 py-1 uppercase font-bold">
-                            {scan.risk_level}
+                            {scan.risk_level === 'dangerous' ? 'HIGH RISK' : scan.risk_level === 'suspicious' ? 'NEUTRAL / UNKNOWN' : 'LIKELY SAFE'}
                         </div>
                     </div>
                 </div>
@@ -343,9 +343,9 @@ export default function Results({ scan }) {
                                 <h1 className="text-2xl md:text-3xl font-bold text-white break-all tracking-tight font-mono">
                                     {host}
                                 </h1>
-                                {scan.risk_level === 'safe' && <span className="px-3 py-1 bg-green-900/20 text-green-400 text-xs font-bold border border-green-500/30 tracking-widest uppercase font-mono">SECURE</span>}
-                                {scan.risk_level === 'suspicious' && <span className="px-3 py-1 bg-yellow-900/20 text-yellow-400 text-xs font-bold border border-yellow-500/30 tracking-widest uppercase font-mono">SUSPICIOUS</span>}
-                                {scan.risk_level === 'dangerous' && <span className="px-3 py-1 bg-red-900/20 text-red-500 text-xs font-bold border border-red-500/50 tracking-widest uppercase animate-pulse font-mono">DANGEROUS</span>}
+                                {scan.risk_level === 'safe' && <span className="px-3 py-1 bg-green-900/20 text-green-400 text-xs font-bold border border-green-500/30 tracking-widest uppercase font-mono">LIKELY SAFE</span>}
+                                {scan.risk_level === 'suspicious' && <span className="px-3 py-1 bg-yellow-900/20 text-yellow-400 text-xs font-bold border border-yellow-500/30 tracking-widest uppercase font-mono">NEUTRAL / UNKNOWN</span>}
+                                {scan.risk_level === 'dangerous' && <span className="px-3 py-1 bg-red-900/20 text-red-500 text-xs font-bold border border-red-500/50 tracking-widest uppercase animate-pulse font-mono">HIGH RISK</span>}
                             </div>
                             <p className="text-blue-500/50 text-xs mt-2 font-mono uppercase tracking-wider">{scan.normalized_url}</p>
                         </div>
@@ -828,7 +828,17 @@ export default function Results({ scan }) {
                     </div>
 
                     {/* Disclaimer */}
+
                     <div className="mt-12 pt-8 border-t border-white/5 text-center no-print">
+                        <div className="max-w-3xl mx-auto bg-blue-900/10 border border-blue-500/20 p-4 rounded mb-6">
+                            <h4 className="text-blue-400 font-bold uppercase tracking-widest text-[10px] mb-2 font-mono">⚠️ FAIRNESS & ACCURACY NOTICE</h4>
+                            <p className="text-[10px] text-gray-400 uppercase tracking-wide font-mono leading-relaxed">
+                                This automated safety score is based on available public data and heuristics.
+                                A <strong>"Safe"</strong> result does not guarantee the site is 100% secure, and a <strong>"Suspicious"</strong> result does not automatically mean the site is malicious (it may just be new or lesser-known).
+                                <br /><br />
+                                <strong>Please use your own judgment.</strong> Do not rely solely on this tool for critical security decisions.
+                            </p>
+                        </div>
                         <p className="text-[10px] text-gray-600 max-w-2xl mx-auto uppercase tracking-wider font-mono">
                             <strong>Security Disclaimer:</strong> Analysis provided for informational purposes only.
                             Automated heuristics may produce false positives. Always verify critical indicators manually.

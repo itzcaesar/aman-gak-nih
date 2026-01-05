@@ -127,15 +127,15 @@ class DomainAnalyzer implements AnalyzerInterface
             if ($ageDays < 30) {
                 $signals[] = [
                     'type' => 'new_domain',
-                    'weight' => -40,
-                    'impact' => 'critical',
+                    'weight' => -20, // Reduced from -40
+                    'impact' => 'warning', // Reduced from critical
                     'description' => "Domain SANGAT BARU (berumur " . round($ageDays) . " hari). Waspada penipuan!",
                     'meta_data' => ['registrar' => $registrar, 'creation_date' => $creationDate]
                 ];
             } elseif ($ageDays < 180) {
                 $signals[] = [
                     'type' => 'young_domain',
-                    'weight' => -15,
+                    'weight' => -5, // Reduced from -10 to minimize false positives
                     'impact' => 'warning',
                     'description' => "Domain relatif baru (berumur < 6 bulan). Gunakan dengan hati-hati.",
                     'meta_data' => ['registrar' => $registrar, 'creation_date' => $creationDate]

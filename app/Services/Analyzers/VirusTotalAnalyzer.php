@@ -109,6 +109,7 @@ class VirusTotalAnalyzer implements AnalyzerInterface
 
                 // Tiered scoring: 1-2 = info, 3-5 = warning, 6+ = critical
                 $suspicious = $stats['suspicious'] ?? 0;
+                $harmless = $stats['harmless'] ?? 0;
                 $totalBad = $malicious + $suspicious;
 
                 // Common metadata for all signals
@@ -128,40 +129,51 @@ class VirusTotalAnalyzer implements AnalyzerInterface
                 ];
 
                 $signal = null;
-                if ($malicious >= 6) {
-                    // Confirmed malicious - multiple vendors agree
+                if ($malicious > 0) {
+                    // User Request: > 10 Critical, 5-10 Warning, < 5 Low Risk
+
+                    if ($malicious > 10) {
+                        $penalty = 100;
+                        $impact = 'critical';
+                        $desc = "CRITICAL: Domain flagged by {$malicious} security vendors.";
+                    } elseif ($malicious >= 5) {
+                        $penalty = min(80, $malicious * 6);
+                        $impact = 'warning';
+                        $desc = "WARNING: Domain flagged by {$malicious} vendors (Moderate Risk).";
+                    } else {
+                        // < 5 is considered False Positive / Noise
+                        $penalty = 5;
+                        $impact = 'info';
+                        $desc = "NOTICE: Domain has {$malicious} flags (Likely False Positives).";
+                    }
+
+                    // Community Considerations
+                    $votes = $data['total_votes'] ?? [];
+                    $commBad = $votes['malicious'] ?? 0;
+                    $commGood = $votes['harmless'] ?? 0;
+
+                    // Increase penalty if community agrees it's bad
+                    if ($commBad > $commGood && $commBad > 5) {
+                        $penalty += 10;
+                        $desc .= " Community feedback is negative.";
+                    }
+
                     $signal = [
-                        'type' => 'vt_domain_malicious',
-                        'weight' => -100,
-                        'impact' => 'critical',
-                        'description' => "Domain ini ({$domain}) TERIDENTIFIKASI BERBAHAYA oleh {$malicious} vendor keamanan.",
-                        'meta_data' => $deepMeta
-                    ];
-                } elseif ($malicious >= 3) {
-                    // High suspicion
-                    $signal = [
-                        'type' => 'vt_domain_suspicious',
-                        'weight' => -50,
-                        'impact' => 'warning',
-                        'description' => "Domain ini ({$domain}) mencurigakan - {$malicious} vendor melaporkan masalah.",
-                        'meta_data' => $deepMeta
-                    ];
-                } elseif ($totalBad > 0) {
-                    // Low concern - possibly false positive
-                    $signal = [
-                        'type' => 'vt_domain_low_risk',
-                        'weight' => -10,
-                        'impact' => 'info',
-                        'description' => "Domain ini ({$domain}) memiliki {$totalBad} laporan minor (kemungkinan false positive).",
+                        'type' => $malicious >= 5 ? 'vt_domain_suspicious' : 'vt_domain_low_risk',
+                        'weight' => -$penalty,
+                        'impact' => $impact,
+                        'description' => $desc,
                         'meta_data' => $deepMeta
                     ];
                 } else {
-                    // Clean
+                    // Bonus: High consensus on safety
+                    $bonus = ($harmless > 60) ? 10 : 0; // Bonus for very well-known safe sites
+
                     $signal = [
                         'type' => 'vt_domain_clean',
-                        'weight' => 20,
+                        'weight' => 20 + $bonus,
                         'impact' => 'positive',
-                        'description' => "Reputasi domain bersih di VirusTotal.",
+                        'description' => "Domain is clean on VirusTotal ({$harmless} safe / {$malicious} malicious).",
                         'meta_data' => $deepMeta
                     ];
                 }
@@ -212,21 +224,31 @@ class VirusTotalAnalyzer implements AnalyzerInterface
                 $impact = 'positive';
                 $desc = 'URL bersih dari malware.';
 
-                if ($malicious >= 6) {
-                    $type = 'vt_url_malicious';
-                    $weight = -100;
-                    $impact = 'critical';
-                    $desc = "URL ini TERIDENTIFIKASI BERBAHAYA oleh {$malicious} vendor.";
-                } elseif ($malicious >= 3) {
-                    $type = 'vt_url_suspicious';
-                    $weight = -50;
-                    $impact = 'warning';
-                    $desc = "URL ini mencurigakan - {$malicious} vendor melaporkan masalah.";
-                } elseif ($totalBad > 0) {
-                    $type = 'vt_url_low_risk';
-                    $weight = -10;
-                    $impact = 'info';
-                    $desc = "URL memiliki {$totalBad} laporan minor (kemungkinan false positive).";
+                if ($malicious > 0) {
+                    // Dynamic Scoring for URL
+                    if ($malicious > 10) {
+                        $penalty = 100;
+                        $impact = 'critical';
+                        $desc = "CRITICAL: URL flagged by {$malicious} security vendors.";
+                    } elseif ($malicious >= 5) {
+                        $penalty = min(80, $malicious * 6);
+                        $impact = 'warning';
+                        $desc = "WARNING: URL flagged by {$malicious} vendors (Moderate Risk).";
+                    } else {
+                        $penalty = 5;
+                        $impact = 'info';
+                        $desc = "NOTICE: URL has {$malicious} flags (Likely False Positives).";
+                    }
+
+                    $type = $malicious >= 5 ? 'vt_url_suspicious' : 'vt_url_low_risk';
+                    $weight = -$penalty;
+                    $desc = "URL flagged by {$malicious} security vendors.";
+                } else {
+                    // Clean
+                    $type = 'vt_url_clean';
+                    $weight = 10;
+                    $impact = 'positive';
+                    $desc = "URL bersih menurut konsensus vendor.";
                 }
 
                 $signal = [
