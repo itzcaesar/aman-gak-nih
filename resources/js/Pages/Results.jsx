@@ -273,9 +273,6 @@ export default function Results({ scan }) {
 
                             {/* Trust Score Card */}
                             <div className="bg-black/80 backdrop-blur-md p-8 border border-blue-900/30 relative overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)] relative">
-                                <div className="absolute top-0 right-0 p-2 opacity-20">
-                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-blue-500"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                </div>
                                 <h3 className="text-blue-500 font-bold uppercase tracking-widest text-xs mb-8 text-center border-b border-blue-900/30 pb-4 font-mono">Security Trust Score</h3>
 
                                 <div className="relative w-56 h-56 mx-auto mb-8 flex items-center justify-center">

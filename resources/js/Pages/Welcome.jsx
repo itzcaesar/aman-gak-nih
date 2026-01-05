@@ -50,12 +50,12 @@ export default function Welcome() {
                     </div>
 
                     <h1 className="text-5xl md:text-7xl font-bold tracking-tighter text-white leading-tight">
-                        VERIFY DIGITAL <span className="text-transparent bg-clip-text bg-gradient-to-b from-blue-400 to-blue-600">TRUST</span>
+                        VALIDASI SITUS <span className="text-transparent bg-clip-text bg-gradient-to-b from-blue-400 to-blue-600">DIGITAL</span>
                     </h1>
 
                     <p className="text-lg text-gray-400 font-mono text-sm max-w-xl mx-auto leading-relaxed border-l-2 border-blue-500/30 pl-4 text-left md:text-center md:border-l-0 md:pl-0">
-                        ANALYZE SUSPICIOUS LINKS WITH ADVANCED THREAT INTELLIGENCE.
-                        DETECT PHISHING, MALWARE, AND FRAUD IN REAL-TIME.
+                        ANALISIS LINK MENCURIGAKAN DENGAN TEKNOLOGI INTELIJEN ANCAMAN TINGKAT LANJUT.
+                        DETEKSI PHISING, MALWARE, DAN PENIPUAN SECARA REALTIME.
                     </p>
 
                     <div className="mt-12 max-w-xl mx-auto relative group z-20">
@@ -71,7 +71,7 @@ export default function Welcome() {
                                 value={data.url}
                                 onChange={e => setData('url', e.target.value)}
                                 className="w-full bg-transparent border-none text-white text-lg placeholder-gray-600 px-4 py-6 focus:ring-0 font-mono outline-none"
-                                placeholder="ENTER TARGET URL..."
+                                placeholder="MASUKAN TARGET URL..."
                                 required
                                 autoFocus
                                 spellCheck="false"
@@ -98,17 +98,17 @@ export default function Welcome() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-20 pt-10 border-t border-white/5">
                         <div className="flex flex-col items-center p-6 border border-white/5 bg-black/60 backdrop-blur-md hover:border-blue-500/30 transition-colors group cursor-default">
                             <span className="text-2xl mb-4 text-gray-500 group-hover:text-blue-400 transition-colors">🔒</span>
-                            <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold font-mono">SSL Analysis</span>
+                            <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold font-mono">Analisis SSL</span>
                             <span className="text-sm font-bold text-white mt-2 group-hover:text-blue-400">GRADE A+</span>
                         </div>
                         <div className="flex flex-col items-center p-6 border border-white/5 bg-black/60 backdrop-blur-md hover:border-blue-500/30 transition-colors group cursor-default">
                             <span className="text-2xl mb-4 text-gray-500 group-hover:text-blue-400 transition-colors">📅</span>
-                            <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold font-mono">Domain Age</span>
+                            <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold font-mono">Umur Domain</span>
                             <span className="text-sm font-bold text-white mt-2 group-hover:text-blue-400">WHOIS CHECK</span>
                         </div>
                         <div className="flex flex-col items-center p-6 border border-white/5 bg-black/60 backdrop-blur-md hover:border-blue-500/30 transition-colors group cursor-default">
                             <span className="text-2xl mb-4 text-gray-500 group-hover:text-blue-400 transition-colors">⚡</span>
-                            <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold font-mono">Fast Scan</span>
+                            <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold font-mono">Scan Cepat</span>
                             <span className="text-sm font-bold text-white mt-2 group-hover:text-blue-400">&lt; 5 SECONDS</span>
                         </div>
                         <div className="flex flex-col items-center p-6 border border-white/5 bg-black/60 backdrop-blur-md hover:border-blue-500/30 transition-colors group cursor-default">
