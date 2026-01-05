@@ -114,7 +114,13 @@ class ScanWorkflowTest extends TestCase
 
         foreach ($testCases as $input => $expectedPattern) {
             $response = $this->post('/scan', ['url' => $input]);
-            $scan = Scan::latest()->first();
+
+            // Should redirect to /scan/{id}
+            $response->assertRedirect();
+            $redirectUrl = $response->headers->get('Location');
+            $scanId = basename($redirectUrl);
+
+            $scan = Scan::find($scanId);
 
             Log::info("[DEBUG] Input: {$input} => Normalized: {$scan->normalized_url}");
 
