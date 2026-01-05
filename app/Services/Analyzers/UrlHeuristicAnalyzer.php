@@ -11,7 +11,7 @@ class UrlHeuristicAnalyzer implements AnalyzerInterface
         return 'URL Heuristics';
     }
 
-    public function analyze(Scan $scan): array
+    public function analyze(Scan $scan, array $context = []): array
     {
         $signals = [];
         $url = $scan->normalized_url;

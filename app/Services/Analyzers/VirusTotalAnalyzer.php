@@ -14,7 +14,44 @@ class VirusTotalAnalyzer implements AnalyzerInterface
         return 'VirusTotal Intelligence';
     }
 
-    public function analyze(Scan $scan): array
+    public function getAsyncRequests(Scan $scan): array
+    {
+        $key = env('VIRUSTOTAL_API_KEY');
+        if (empty($key)) {
+            return [];
+        }
+
+        $url = $scan->normalized_url;
+        $host = parse_url($url, PHP_URL_HOST);
+        $requests = [];
+
+        // Domain Check
+        $domainCacheKey = 'vt_domain_' . md5($host);
+        if (!Cache::has($domainCacheKey)) {
+            $requests['vt_domain'] = [
+                'method' => 'GET',
+                'url' => "https://www.virustotal.com/api/v3/domains/{$host}",
+                'headers' => ['x-apikey' => $key],
+                'options' => ['verify' => false, 'timeout' => 10]
+            ];
+        }
+
+        // URL Check
+        $urlCacheKey = 'vt_url_' . md5($url);
+        if (!Cache::has($urlCacheKey)) {
+            $urlId = rtrim(base64_encode($url), '=');
+            $requests['vt_url'] = [
+                'method' => 'GET',
+                'url' => "https://www.virustotal.com/api/v3/urls/{$urlId}",
+                'headers' => ['x-apikey' => $key],
+                'options' => ['verify' => false, 'timeout' => 10]
+            ];
+        }
+
+        return $requests;
+    }
+
+    public function analyze(Scan $scan, array $context = []): array
     {
         $key = env('VIRUSTOTAL_API_KEY');
         if (empty($key)) {
@@ -26,13 +63,16 @@ class VirusTotalAnalyzer implements AnalyzerInterface
         $host = parse_url($url, PHP_URL_HOST);
 
         // Check Domain Reputation
-        $domainSignal = $this->checkDomain($host, $key);
+        // Pass context response if available
+        $domainResponse = $context['vt_domain'] ?? null;
+        $domainSignal = $this->checkDomain($host, $key, $domainResponse);
         if ($domainSignal) {
             $signals[] = $domainSignal;
         }
 
         // Check URL Specifics
-        $urlSignal = $this->checkUrl($url, $key);
+        $urlResponse = $context['vt_url'] ?? null;
+        $urlSignal = $this->checkUrl($url, $key, $urlResponse);
         if ($urlSignal) {
             $signals[] = $urlSignal;
         }
@@ -40,7 +80,7 @@ class VirusTotalAnalyzer implements AnalyzerInterface
         return $signals;
     }
 
-    private function checkDomain(string $domain, string $key): ?array
+    private function checkDomain(string $domain, string $key, $preFetchedResponse = null): ?array
     {
         $cacheKey = 'vt_domain_' . md5($domain);
         $cached = Cache::get($cacheKey);
@@ -48,11 +88,15 @@ class VirusTotalAnalyzer implements AnalyzerInterface
             return $cached;
 
         try {
-            /** @var \Illuminate\Http\Client\Response $response */
-            $response = Http::withHeaders(['x-apikey' => $key])
-                ->withoutVerifying()
-                ->timeout(10)
-                ->get("https://www.virustotal.com/api/v3/domains/{$domain}");
+            if ($preFetchedResponse) {
+                $response = $preFetchedResponse;
+            } else {
+                /** @var \Illuminate\Http\Client\Response $response */
+                $response = Http::withHeaders(['x-apikey' => $key])
+                    ->withoutVerifying()
+                    ->timeout(10)
+                    ->get("https://www.virustotal.com/api/v3/domains/{$domain}");
+            }
 
             if ($response->successful()) {
                 $data = $response->json()['data']['attributes'] ?? null;
@@ -131,7 +175,7 @@ class VirusTotalAnalyzer implements AnalyzerInterface
         return null;
     }
 
-    private function checkUrl(string $url, string $key): ?array
+    private function checkUrl(string $url, string $key, $preFetchedResponse = null): ?array
     {
         $cacheKey = 'vt_url_' . md5($url);
         $cached = Cache::get($cacheKey);
@@ -139,12 +183,16 @@ class VirusTotalAnalyzer implements AnalyzerInterface
             return $cached;
 
         try {
-            $urlId = rtrim(base64_encode($url), '=');
-            /** @var \Illuminate\Http\Client\Response $response */
-            $response = Http::withHeaders(['x-apikey' => $key])
-                ->withoutVerifying()
-                ->timeout(10)
-                ->get("https://www.virustotal.com/api/v3/urls/{$urlId}");
+            if ($preFetchedResponse) {
+                $response = $preFetchedResponse;
+            } else {
+                $urlId = rtrim(base64_encode($url), '=');
+                /** @var \Illuminate\Http\Client\Response $response */
+                $response = Http::withHeaders(['x-apikey' => $key])
+                    ->withoutVerifying()
+                    ->timeout(10)
+                    ->get("https://www.virustotal.com/api/v3/urls/{$urlId}");
+            }
 
             if ($response->successful()) {
                 $data = $response->json()['data']['attributes'] ?? null;

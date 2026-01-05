@@ -26,6 +26,7 @@
 | **🛡️ Google Safe Browsing** | Integrasi API Google untuk mencocokkan URL dengan database malware/phishing global. |
 | **📊 Skor Transparan** | Memberikan skor risiko **0-100** dengan penjelasan detail untuk setiap sinyal yang ditemukan. |
 | **🎨 Tampilan Futuristik** | Antarmuka bertema Matrix dengan latar belakang animasi kode, efek *glitch*, dan visual cyberpunk yang responsif. |
+| **⚡ Performa Tinggi** | Proses scanning dioptimalkan dengan eksekusi paralel (async), mempercepat pengumpulan data dari berbagai sumber API. |
 
 ## 🛠️ Teknologi Utama
 

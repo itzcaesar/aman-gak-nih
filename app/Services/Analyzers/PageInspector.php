@@ -12,18 +12,39 @@ class PageInspector implements AnalyzerInterface
         return 'Page Content Inspector';
     }
 
-    public function analyze(Scan $scan): array
+    public function getAsyncRequests(Scan $scan): array
+    {
+        return [
+            'page' => [
+                'method' => 'GET',
+                'url' => $scan->normalized_url,
+                'options' => [
+                    'verify' => false,
+                    'timeout' => 10,
+                    'headers' => [
+                        'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                    ]
+                ]
+            ]
+        ];
+    }
+
+    public function analyze(Scan $scan, array $context = []): array
     {
         $signals = [];
         $url = $scan->normalized_url;
 
         try {
-            // Fetch with standard User-Agent
-            /** @var \Illuminate\Http\Client\Response $response */
-            $response = Http::timeout(10)
-                ->withoutVerifying()
-                ->withUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36')
-                ->get($url);
+            if (isset($context['page'])) {
+                $response = $context['page'];
+            } else {
+                // Fetch with standard User-Agent
+                /** @var \Illuminate\Http\Client\Response $response */
+                $response = Http::timeout(10)
+                    ->withoutVerifying()
+                    ->withUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36')
+                    ->get($url);
+            }
 
             if ($response->failed()) {
                 $signals[] = [

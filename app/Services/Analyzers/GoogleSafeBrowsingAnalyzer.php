@@ -13,7 +13,7 @@ class GoogleSafeBrowsingAnalyzer implements AnalyzerInterface
         return 'Google Safe Browsing';
     }
 
-    public function analyze(Scan $scan): array
+    public function getAsyncRequests(Scan $scan): array
     {
         $key = env('GOOGLE_SAFE_BROWSING_KEY');
         if (empty($key)) {
@@ -21,31 +21,59 @@ class GoogleSafeBrowsingAnalyzer implements AnalyzerInterface
         }
 
         $url = $scan->normalized_url;
+        $endpoint = "https://safebrowsing.googleapis.com/v4/threatMatches:find?key={$key}";
+
+        $payload = [
+            'client' => [
+                'clientId' => 'aman-gak-nih',
+                'clientVersion' => '1.0.0'
+            ],
+            'threatInfo' => [
+                'threatTypes' => ['MALWARE', 'SOCIAL_ENGINEERING', 'UNWANTED_SOFTWARE', 'POTENTIALLY_HARMFUL_APPLICATION'],
+                'platformTypes' => ['ANY_PLATFORM'],
+                'threatEntryTypes' => ['URL'],
+                'threatEntries' => [
+                    ['url' => $url]
+                ]
+            ]
+        ];
+
+        return [
+            'gsb' => [
+                'method' => 'POST',
+                'url' => $endpoint,
+                'data' => $payload,
+                'options' => ['verify' => false, 'timeout' => 5]
+            ]
+        ];
+    }
+
+    public function analyze(Scan $scan, array $context = []): array
+    {
         $signals = [];
 
+        // Use pre-fetched response if available
+        if (isset($context['gsb'])) {
+            $response = $context['gsb'];
+        } else {
+            // Fallback to synchronous execution
+            $requests = $this->getAsyncRequests($scan);
+            if (empty($requests))
+                return [];
+
+            $req = $requests['gsb'];
+            $response = Http::withoutVerifying()->timeout(5)->post($req['url'], $req['data']);
+        }
+
         try {
-            $endpoint = "https://safebrowsing.googleapis.com/v4/threatMatches:find?key={$key}";
-
-            $payload = [
-                'client' => [
-                    'clientId' => 'aman-gak-nih',
-                    'clientVersion' => '1.0.0'
-                ],
-                'threatInfo' => [
-                    'threatTypes' => ['MALWARE', 'SOCIAL_ENGINEERING', 'UNWANTED_SOFTWARE', 'POTENTIALLY_HARMFUL_APPLICATION'],
-                    'platformTypes' => ['ANY_PLATFORM'],
-                    'threatEntryTypes' => ['URL'],
-                    'threatEntries' => [
-                        ['url' => $url]
-                    ]
-                ]
-            ];
-
-            /** @var \Illuminate\Http\Client\Response $response */
-            $response = Http::withoutVerifying()->timeout(5)->post($endpoint, $payload);
-
             if ($response->successful()) {
                 $data = $response->json();
+                // Reconstruct payload for metadata (since we need it for the 'clean' signal)
+                // We can either pass it in context or just re-generate it. Re-generating is cheap.
+                $key = env('GOOGLE_SAFE_BROWSING_KEY'); // Env might be needed if we were generating requests strictly, but here we just need payload structure
+
+                // Quick payload reconstruction for metadata
+                $payload = $this->getAsyncRequests($scan)['gsb']['data'];
 
                 if (!empty($data['matches'])) {
                     $signals[] = [

@@ -12,7 +12,7 @@ interface AnalyzerInterface
      * @param Scan $scan
      * @return array Array of signal data [['type' => ..., 'weight' => ..., 'impact' => ..., 'description' => ...]]
      */
-    public function analyze(Scan $scan): array;
+    public function analyze(Scan $scan, array $context = []): array;
 
     /**
      * Get the name/identifier of the analyzer.

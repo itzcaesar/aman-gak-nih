@@ -78,9 +78,62 @@ class RunWebsiteScanJob implements ShouldQueue
         ];
 
         try {
+            // 1. Pre-fetch external data concurrently
+            $asyncConfigs = [];
+            foreach ($analyzers as $analyzer) {
+                if (method_exists($analyzer, 'getAsyncRequests')) {
+                    $asyncConfigs = array_merge($asyncConfigs, $analyzer->getAsyncRequests($scan));
+                }
+            }
+
+            $context = [];
+            if (!empty($asyncConfigs)) {
+                $responses = \Illuminate\Support\Facades\Http::pool(function (\Illuminate\Http\Client\Pool $pool) use ($asyncConfigs) {
+                    $poolRequests = [];
+                    foreach ($asyncConfigs as $key => $config) {
+                        $getRequest = $pool->as($key);
+
+                        // Apply Headers
+                        if (!empty($config['headers'])) {
+                            $getRequest->withHeaders($config['headers']);
+                        }
+
+                        // Apply Options
+                        $options = $config['options'] ?? [];
+                        if (isset($options['verify']) && !$options['verify']) {
+                            $getRequest->withoutVerifying();
+                        }
+                        if (isset($options['timeout'])) {
+                            $getRequest->timeout($options['timeout']);
+                        }
+                        // Handle explicit User-Agent in nested headers or options
+                        if (isset($options['headers']['User-Agent'])) {
+                            $getRequest->withUserAgent($options['headers']['User-Agent']);
+                        }
+
+                        // Add to pool
+                        $method = strtoupper($config['method']);
+                        if ($method === 'GET') {
+                            $poolRequests[] = $getRequest->get($config['url']);
+                        } elseif ($method === 'POST') {
+                            $poolRequests[] = $getRequest->post($config['url'], $config['data'] ?? []);
+                        }
+                    }
+                    return $poolRequests;
+                });
+
+                // Collect results
+                foreach ($responses as $key => $response) {
+                    if ($response instanceof \Illuminate\Http\Client\Response || $response instanceof \Exception) {
+                        $context[$key] = $response; // Handled by analyzer (it checks logic)
+                    }
+                }
+            }
+
+            // 2. Run Analyzers (using context if available)
             foreach ($analyzers as $analyzer) {
                 try {
-                    $results = $analyzer->analyze($scan);
+                    $results = $analyzer->analyze($scan, $context);
 
                     foreach ($results as $result) {
                         $scan->signals()->create([

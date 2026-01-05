@@ -14,7 +14,7 @@ class BrandDetector implements AnalyzerInterface
         return 'Brand Impersonation Detector';
     }
 
-    public function analyze(Scan $scan): array
+    public function analyze(Scan $scan, array $context = []): array
     {
         $signals = [];
         $url = $scan->normalized_url;

@@ -15,7 +15,40 @@ class DomainAnalyzer implements AnalyzerInterface
         return 'Domain Identity & Age';
     }
 
-    public function analyze(Scan $scan): array
+    public function getAsyncRequests(Scan $scan): array
+    {
+        $apiNinjaKey = env('API_NINJA_KEY');
+        if (!$apiNinjaKey) {
+            return [];
+        }
+
+        $url = $scan->normalized_url;
+        $host = parse_url($url, PHP_URL_HOST);
+        $domain = preg_replace('/^www\./', '', $host);
+
+        // Try to get root domain for subdomains (reusing logic from analyze - ideally refactor this out to private method but duplication is safer for now)
+        $parts = explode('.', $domain);
+        if (count($parts) > 2) {
+            $multipartTlds = ['co.id', 'ac.id', 'go.id', 'sch.id', 'or.id', 'co.uk', 'com.sg', 'com.my', 'edu.my'];
+            $tld2 = $parts[count($parts) - 2] . '.' . $parts[count($parts) - 1];
+            if (in_array($tld2, $multipartTlds)) {
+                $domain = implode('.', array_slice($parts, -3));
+            } else {
+                $domain = implode('.', array_slice($parts, -2));
+            }
+        }
+
+        return [
+            'whois' => [
+                'method' => 'GET',
+                'url' => "https://api.api-ninjas.com/v1/whois?domain={$domain}",
+                'headers' => ['X-Api-Key' => $apiNinjaKey],
+                'options' => ['verify' => false, 'timeout' => 10]
+            ]
+        ];
+    }
+
+    public function analyze(Scan $scan, array $context = []): array
     {
         $signals = [];
         $url = $scan->normalized_url;
@@ -56,11 +89,15 @@ class DomainAnalyzer implements AnalyzerInterface
         }
 
         try {
-            /** @var \Illuminate\Http\Client\Response $response */
-            $response = Http::withoutVerifying()
-                ->withHeaders(['X-Api-Key' => $apiNinjaKey])
-                ->timeout(10)
-                ->get("https://api.api-ninjas.com/v1/whois?domain={$domain}");
+            if (isset($context['whois'])) {
+                $response = $context['whois'];
+            } else {
+                /** @var \Illuminate\Http\Client\Response $response */
+                $response = Http::withoutVerifying()
+                    ->withHeaders(['X-Api-Key' => $apiNinjaKey])
+                    ->timeout(10)
+                    ->get("https://api.api-ninjas.com/v1/whois?domain={$domain}");
+            }
 
             if ($response->successful()) {
                 $data = $response->json();
