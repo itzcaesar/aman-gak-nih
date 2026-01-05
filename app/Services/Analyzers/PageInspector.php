@@ -46,6 +46,17 @@ class PageInspector implements AnalyzerInterface
                     ->get($url);
             }
 
+            // Handle potential exceptions from Async requests
+            if ($response instanceof \Exception) {
+                $signals[] = [
+                    'type' => 'page_fetch_error',
+                    'weight' => 0,
+                    'impact' => 'info',
+                    'description' => 'Gagal mengambil konten: ' . $response->getMessage()
+                ];
+                return $signals;
+            }
+
             if ($response->failed()) {
                 $signals[] = [
                     'type' => 'page_fetch_failed',
