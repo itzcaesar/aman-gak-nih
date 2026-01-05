@@ -1,6 +1,7 @@
 import React from 'react';
-import { useForm } from '@inertiajs/react'; // Cleaned imports
+import { useForm } from '@inertiajs/react';
 import { motion } from 'framer-motion';
+import MatrixRain from '../Components/MatrixRain';
 
 export default function Welcome() {
     const { data, setData, post, processing, errors } = useForm({
@@ -13,7 +14,8 @@ export default function Welcome() {
     };
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-blue-500/30 flex flex-col relative overflow-x-hidden">
+        <div className="min-h-screen text-white font-sans selection:bg-blue-500/30 flex flex-col relative overflow-x-hidden">
+            <MatrixRain />
 
             <nav className="relative z-50 p-6 w-full border-b border-white/5 bg-[#0a0a0a]/50 backdrop-blur-md">
                 <div className="max-w-7xl mx-auto flex justify-between items-center">
@@ -94,22 +96,22 @@ export default function Welcome() {
                     )}
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-20 pt-10 border-t border-white/5">
-                        <div className="flex flex-col items-center p-6 border border-white/5 hover:border-blue-500/30 transition-colors group cursor-default">
+                        <div className="flex flex-col items-center p-6 border border-white/5 bg-black/60 backdrop-blur-md hover:border-blue-500/30 transition-colors group cursor-default">
                             <span className="text-2xl mb-4 text-gray-500 group-hover:text-blue-400 transition-colors">🔒</span>
                             <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold font-mono">SSL Analysis</span>
                             <span className="text-sm font-bold text-white mt-2 group-hover:text-blue-400">GRADE A+</span>
                         </div>
-                        <div className="flex flex-col items-center p-6 border border-white/5 hover:border-blue-500/30 transition-colors group cursor-default">
+                        <div className="flex flex-col items-center p-6 border border-white/5 bg-black/60 backdrop-blur-md hover:border-blue-500/30 transition-colors group cursor-default">
                             <span className="text-2xl mb-4 text-gray-500 group-hover:text-blue-400 transition-colors">📅</span>
                             <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold font-mono">Domain Age</span>
                             <span className="text-sm font-bold text-white mt-2 group-hover:text-blue-400">WHOIS CHECK</span>
                         </div>
-                        <div className="flex flex-col items-center p-6 border border-white/5 hover:border-blue-500/30 transition-colors group cursor-default">
+                        <div className="flex flex-col items-center p-6 border border-white/5 bg-black/60 backdrop-blur-md hover:border-blue-500/30 transition-colors group cursor-default">
                             <span className="text-2xl mb-4 text-gray-500 group-hover:text-blue-400 transition-colors">⚡</span>
                             <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold font-mono">Fast Scan</span>
                             <span className="text-sm font-bold text-white mt-2 group-hover:text-blue-400">&lt; 5 SECONDS</span>
                         </div>
-                        <div className="flex flex-col items-center p-6 border border-white/5 hover:border-blue-500/30 transition-colors group cursor-default">
+                        <div className="flex flex-col items-center p-6 border border-white/5 bg-black/60 backdrop-blur-md hover:border-blue-500/30 transition-colors group cursor-default">
                             <span className="text-2xl mb-4 text-gray-500 group-hover:text-blue-400 transition-colors">🤖</span>
                             <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold font-mono">AI Engine</span>
                             <span className="text-sm font-bold text-white mt-2 group-hover:text-blue-400">ACTIVE</span>

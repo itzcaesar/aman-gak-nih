@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { usePage, router, Link } from '@inertiajs/react';
 import { motion } from 'framer-motion';
+import MatrixRain from '../Components/MatrixRain';
 
 export default function Results({ scan }) {
     const [activeTab, setActiveTab] = useState('overview');
@@ -23,6 +24,7 @@ export default function Results({ scan }) {
     if (scan.status !== 'completed' && scan.status !== 'failed') {
         return (
             <div className="min-h-screen bg-[#0a0a0a] text-white font-sans flex flex-col items-center justify-center relative overflow-hidden">
+                <MatrixRain />
                 <div className="relative z-10 text-center px-4">
                     <div className="relative w-32 h-32 mx-auto mb-8">
                         <div className="absolute inset-0 border-4 border-blue-600/30 rounded-full animate-ping"></div>
@@ -89,7 +91,8 @@ export default function Results({ scan }) {
     const offset = circumference - (scan.final_score / 100) * circumference;
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-blue-500/30 flex flex-col relative overflow-x-hidden print:bg-white print:text-black print:min-h-0 print:overflow-visible">
+        <div className="min-h-screen text-white font-sans selection:bg-blue-500/30 flex flex-col relative overflow-x-hidden print:bg-white print:text-black print:min-h-0 print:overflow-visible">
+            <MatrixRain />
 
             <style>{`
                 @media print {
@@ -238,7 +241,7 @@ export default function Results({ scan }) {
                     className="space-y-8"
                 >
                     {/* Main Header Card */}
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-[#0a0a0a] p-8 rounded-none border-l-4 border-l-blue-600 border-y border-r border-y-white/5 border-r-white/5 shadow-2xl relative overflow-hidden">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-black/80 backdrop-blur-md p-8 rounded-none border-l-4 border-l-blue-600 border-y border-r border-y-white/5 border-r-white/5 shadow-2xl relative overflow-hidden">
                         {/* Mesh grid background pattern */}
                         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
 
@@ -269,7 +272,7 @@ export default function Results({ scan }) {
                         <div className="lg:col-span-1 space-y-6">
 
                             {/* Trust Score Card */}
-                            <div className="bg-[#0a0a0a] p-8 border border-blue-900/30 relative overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)] relative">
+                            <div className="bg-black/80 backdrop-blur-md p-8 border border-blue-900/30 relative overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)] relative">
                                 <div className="absolute top-0 right-0 p-2 opacity-20">
                                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-blue-500"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                 </div>
@@ -355,10 +358,10 @@ export default function Results({ scan }) {
                                                     initial={{ opacity: 0, x: -10 }}
                                                     animate={{ opacity: 1, x: 0 }}
                                                     transition={{ delay: idx * 0.05 }}
-                                                    className={`group hover:bg-blue-900/5 transition-all p-4 border-l-2 ${signal.impact === 'critical' ? 'border-l-red-500 bg-red-900/5 border border-red-900/10' :
-                                                        signal.impact === 'warning' ? 'border-l-yellow-500 bg-yellow-900/5 border border-yellow-900/10' :
-                                                            signal.impact === 'positive' ? 'border-l-green-500 bg-green-900/5 border border-green-900/10' :
-                                                                'border-l-gray-600 bg-white/5 border border-white/5'
+                                                    className={`group hover:bg-blue-900/20 transition-all p-4 border-l-2 backdrop-blur-md ${signal.impact === 'critical' ? 'border-l-red-500 bg-black/80 border border-red-500/30' :
+                                                        signal.impact === 'warning' ? 'border-l-yellow-500 bg-black/80 border border-yellow-500/30' :
+                                                            signal.impact === 'positive' ? 'border-l-green-500 bg-black/80 border border-green-500/30' :
+                                                                'border-l-gray-600 bg-black/80 border border-white/10'
                                                         }`}
                                                 >
                                                     <div className="flex justify-between items-start">
@@ -380,21 +383,21 @@ export default function Results({ scan }) {
                                 )}
 
                                 {activeTab === 'security' && (
-                                    <div className="bg-[#0a0a0a] border border-blue-900/30 p-6 relative">
+                                    <div className="bg-black/80 backdrop-blur-md border border-blue-900/30 p-6 relative">
                                         <div className="absolute top-0 right-0 w-4 h-4 border-t border-r border-blue-500/50"></div>
                                         <div className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-blue-500/50"></div>
 
-                                        <div className="flex items-center justify-between mb-6 border-b border-blue-900/30 pb-4">
-                                            <h3 className="text-blue-400 font-bold flex items-center gap-3 text-xs uppercase tracking-wider font-mono">
+                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-blue-900/30 pb-4">
+                                            <h3 className="text-blue-400 font-bold flex items-center gap-3 text-xs uppercase tracking-wider font-mono shrink-0">
                                                 <span>🛡️</span> Threat Intelligence
                                             </h3>
                                             {/* Inner Tab Switcher */}
-                                            <div className="flex gap-1">
+                                            <div className="flex gap-1 overflow-x-auto max-w-full pb-2 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 no-scrollbar">
                                                 {['detection', 'details', 'relations', 'community', 'google sb'].map((tab) => (
                                                     <button
                                                         key={tab}
                                                         onClick={() => setVtTab(tab)}
-                                                        className={`px-3 py-1 text-[10px] uppercase font-bold tracking-wider transition-all border font-mono ${vtTab === tab
+                                                        className={`px-3 py-1 text-[10px] uppercase font-bold tracking-wider transition-all border font-mono whitespace-nowrap shrink-0 ${vtTab === tab
                                                             ? 'bg-blue-600 text-black border-blue-600'
                                                             : 'text-gray-500 hover:text-white border-transparent hover:border-white/10'
                                                             }`}
@@ -552,7 +555,7 @@ export default function Results({ scan }) {
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                                 <div>
                                                     <h4 className="text-white text-[10px] uppercase font-bold tracking-widest mb-4 border-l-2 border-blue-500 pl-3">Crowdsourced Voting</h4>
-                                                    <div className="grid grid-cols-2 gap-4">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                         <div className="bg-green-900/10 border border-green-500/30 p-4 text-center">
                                                             <span className="block text-2xl font-bold text-green-500 font-mono">{votes.harmless || 0}</span>
                                                             <span className="text-[10px] text-green-400 uppercase tracking-wider">Harmless</span>
@@ -638,7 +641,7 @@ export default function Results({ scan }) {
                                 )}
 
                                 {activeTab === 'domain' && (
-                                    <div className="bg-[#0a0a0a] border border-blue-900/30 p-6 space-y-6 relative">
+                                    <div className="bg-black/80 backdrop-blur-md border border-blue-900/30 p-6 space-y-6 relative">
                                         <div className="absolute top-0 right-0 w-4 h-4 border-t border-r border-blue-500/50"></div>
                                         <div className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-blue-500/50"></div>
 
