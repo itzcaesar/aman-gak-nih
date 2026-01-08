@@ -21,8 +21,6 @@
 - [X] **Rate Limiting**:
     - Implement granular throttling per IP (e.g., 5 scans per minute) using middleware.
     - Add special limits for "Expensive" APIs like VirusTotal.
-- [ ] **Bot Protection**:
-    - Integrate **Cloudflare Turnstile** or **Google reCAPTCHA v3** on submission forms.
 - [x] **HTTP Security Headers**:
     - Configure Content-Security-Policy (CSP), Strict-Transport-Security (HSTS), and X-Content-Type-Options.
 - [x] **Input Sanitization**:
