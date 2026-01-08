@@ -46,7 +46,7 @@ export default function Welcome() {
                             <span className="animate-ping absolute inline-flex h-full w-full bg-blue-400 opacity-75"></span>
                             <span className="relative inline-flex h-2 w-2 bg-blue-500"></span>
                         </span>
-                        <span className="text-xs font-mono text-blue-400 tracking-widest uppercase">SYSTEM ONLINE // READY TO SCAN</span>
+                        <span className="text-xs font-mono text-blue-400 tracking-widest uppercase">SISTEM ONLINE // SIAP MEMINDAI</span>
                     </div>
 
                     <h1 className="text-5xl md:text-7xl font-bold tracking-tighter text-white leading-tight">
@@ -54,8 +54,8 @@ export default function Welcome() {
                     </h1>
 
                     <p className="text-lg text-gray-400 font-mono text-sm max-w-xl mx-auto leading-relaxed border-l-2 border-blue-500/30 pl-4 text-left md:text-center md:border-l-0 md:pl-0">
-                        ANALISIS LINK MENCURIGAKAN DENGAN TEKNOLOGI INTELIJEN ANCAMAN TINGKAT LANJUT.
-                        DETEKSI PHISING, MALWARE, DAN PENIPUAN SECARA REALTIME.
+                        ANALISIS TAUTAN MENCURIGAKAN DENGAN TEKNOLOGI INTELIJEN ANCAMAN MUKTAHIR.
+                        DETEKSI PHISHING, MALWARE, DAN PENIPUAN SECARA REAL-TIME.
                     </p>
 
                     <div className="mt-12 max-w-xl mx-auto relative group z-20">
@@ -71,7 +71,7 @@ export default function Welcome() {
                                 value={data.url}
                                 onChange={e => setData('url', e.target.value)}
                                 className="w-full bg-transparent border-none text-white text-lg placeholder-gray-600 px-4 py-6 focus:ring-0 font-mono outline-none"
-                                placeholder="MASUKAN TARGET URL..."
+                                placeholder="MASUKKAN TARGET URL..."
                                 required
                                 autoFocus
                                 spellCheck="false"
@@ -84,7 +84,7 @@ export default function Welcome() {
                             >
                                 {processing ? (
                                     <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                ) : 'SCAN'}
+                                ) : 'PINDAI'}
                             </button>
                         </form>
                     </div>
@@ -104,17 +104,17 @@ export default function Welcome() {
                         <div className="flex flex-col items-center p-6 border border-white/5 bg-black/60 backdrop-blur-md hover:border-blue-500/30 transition-colors group cursor-default">
                             <span className="text-2xl mb-4 text-gray-500 group-hover:text-blue-400 transition-colors">📅</span>
                             <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold font-mono">Umur Domain</span>
-                            <span className="text-sm font-bold text-white mt-2 group-hover:text-blue-400">WHOIS CHECK</span>
+                            <span className="text-sm font-bold text-white mt-2 group-hover:text-blue-400">CEK WHOIS</span>
                         </div>
                         <div className="flex flex-col items-center p-6 border border-white/5 bg-black/60 backdrop-blur-md hover:border-blue-500/30 transition-colors group cursor-default">
                             <span className="text-2xl mb-4 text-gray-500 group-hover:text-blue-400 transition-colors">⚡</span>
                             <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold font-mono">Scan Cepat</span>
-                            <span className="text-sm font-bold text-white mt-2 group-hover:text-blue-400">&lt; 5 SECONDS</span>
+                            <span className="text-sm font-bold text-white mt-2 group-hover:text-blue-400">&lt; 5 DETIK</span>
                         </div>
                         <div className="flex flex-col items-center p-6 border border-white/5 bg-black/60 backdrop-blur-md hover:border-blue-500/30 transition-colors group cursor-default">
                             <span className="text-2xl mb-4 text-gray-500 group-hover:text-blue-400 transition-colors">🤖</span>
-                            <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold font-mono">AI Engine</span>
-                            <span className="text-sm font-bold text-white mt-2 group-hover:text-blue-400">ACTIVE</span>
+                            <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold font-mono">Mesin AI</span>
+                            <span className="text-sm font-bold text-white mt-2 group-hover:text-blue-400">AKTIF</span>
                         </div>
                     </div>
 
@@ -123,7 +123,7 @@ export default function Welcome() {
 
             <footer className="relative z-10 border-t border-white/5 bg-[#0a0a0a] py-8">
                 <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center text-xs text-gray-600 font-mono uppercase tracking-wider">
-                    <p>© {new Date().getFullYear()} AMANGAKNIH.ID // OPEN SOURCE SECURITY</p>
+                    <p>© {new Date().getFullYear()} AMANGAKNIH.ID // KEMANAN OPEN SOURCE</p>
                     <div className="flex gap-6 mt-4 md:mt-0">
                         <span>POWERED BY VIRUSTOTAL</span>
                         <span>GOOGLE SAFE BROWSING</span>

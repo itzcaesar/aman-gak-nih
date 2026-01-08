@@ -10,67 +10,31 @@ use Inertia\Inertia;
 
 class ScanController extends Controller
 {
-    protected $normalizer;
+    // normalizer removed
 
-    public function __construct(UrlNormalizer $normalizer)
-    {
-        $this->normalizer = $normalizer;
-    }
 
     public function index()
     {
         return Inertia::render('Welcome');
     }
 
-    public function store(Request $request)
+    public function store(\App\Http\Requests\StoreScanRequest $request, \App\Services\ScanService $service)
     {
-        $url = $request->input('url');
-        // Prepend https:// if protocol is missing (for validation's sake)
-        if ($url && !preg_match("~^(?:f|ht)tps?://~i", $url)) {
-            $url = "https://" . $url;
-            $request->merge(['url' => $url]);
-        }
-
-        $request->validate([
-            'url' => 'required|url'
-        ]);
-
         try {
-            $normalizedUrl = $this->normalizer->normalize($request->input('url'));
+            $scan = $service->handle($request->input('url'));
+            return to_route('scan.show', $scan);
         } catch (\InvalidArgumentException $e) {
             return back()->withErrors(['url' => $e->getMessage()]);
         }
-
-        // Check for recent cached scan (within 1 hour)
-        $existingScan = Scan::where('normalized_url', $normalizedUrl)
-            ->where('status', 'completed')
-            ->where('created_at', '>=', now()->subHour())
-            ->latest()
-            ->first();
-
-        if ($existingScan) {
-            return to_route('scan.show', $existingScan);
-        }
-
-        $scan = Scan::create([
-            'normalized_url' => $normalizedUrl,
-            'status' => 'pending'
-        ]);
-
-        // Dispatch scan job
-        RunWebsiteScanJob::dispatch($scan->id);
-
-        return to_route('scan.show', $scan);
     }
 
     public function show(Scan $scan)
     {
-        // Ensure we have the freshest data from DB
         $scan->refresh();
         $scan->load('signals');
 
         return Inertia::render('Results', [
-            'scan' => $scan // Inertia handles model serialization automatically
+            'scan' => $scan
         ]);
     }
 }

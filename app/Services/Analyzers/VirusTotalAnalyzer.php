@@ -206,6 +206,11 @@ class VirusTotalAnalyzer implements AnalyzerInterface
                     ->get("https://www.virustotal.com/api/v3/urls/{$urlId}");
             }
 
+            if ($response instanceof \Exception) {
+                \Log::error("VirusTotal API Error (URL): " . $response->getMessage());
+                return null;
+            }
+
             if ($response->successful()) {
                 $data = $response->json()['data']['attributes'] ?? null;
                 if (!$data)

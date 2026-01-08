@@ -11,54 +11,54 @@ const getSignalReasoning = (signal) => {
     // VirusTotal Domain/URL
     if (signal.type.includes('vt_')) {
         const stats = meta.stats || {};
-        if (stats.malicious > 0) details.push({ label: 'Malicious Vendors', value: stats.malicious, alert: true });
-        if (stats.suspicious > 0) details.push({ label: 'Suspicious Vendors', value: stats.suspicious, alert: true });
+        if (stats.malicious > 0) details.push({ label: 'Vendor Berbahaya', value: stats.malicious, alert: true });
+        if (stats.suspicious > 0) details.push({ label: 'Vendor Mencurigakan', value: stats.suspicious, alert: true });
         if (meta.categories && Object.keys(meta.categories).length > 0) {
-            details.push({ label: 'Categories', value: Object.values(meta.categories).join(', ').slice(0, 50) + (Object.values(meta.categories).length > 3 ? '...' : '') });
+            details.push({ label: 'Kategori', value: Object.values(meta.categories).join(', ').slice(0, 50) + (Object.values(meta.categories).length > 3 ? '...' : '') });
         }
         if (meta.votes) {
             const communityScore = (meta.votes.harmless || 0) - (meta.votes.malicious || 0);
-            details.push({ label: 'Community Score', value: communityScore > 0 ? `+${communityScore}` : communityScore });
+            details.push({ label: 'Skor Komunitas', value: communityScore > 0 ? `+${communityScore}` : communityScore });
         }
     }
 
     // Google Safe Browsing
     if (signal.type.includes('google_safe_browsing')) {
-        details.push({ label: 'Platform', value: 'Google Transparency Report' });
-        details.push({ label: 'Threat Types', value: meta.checked_threat_types ? meta.checked_threat_types.length : 'All Standard' });
-        if (signal.impact === 'positive') details.push({ label: 'Status', value: 'Verified Safe' });
+        details.push({ label: 'Platform', value: 'Laporan Transparansi Google' });
+        details.push({ label: 'Tipe Ancaman', value: meta.checked_threat_types ? meta.checked_threat_types.length : 'Semua Standar' });
+        if (signal.impact === 'positive') details.push({ label: 'Status', value: 'Terverifikasi Aman' });
     }
 
     // Domain / Whois
     if (signal.type.includes('domain') || signal.type.includes('whois')) {
         if (meta.creation_date) {
             const date = new Date(meta.creation_date * 1000);
-            details.push({ label: 'Registered On', value: date.toLocaleDateString() });
+            details.push({ label: 'Terdaftar Pada', value: date.toLocaleDateString() });
             // Calculate relative time roughly
             const years = ((new Date() - date) / (1000 * 60 * 60 * 24 * 365)).toFixed(1);
-            details.push({ label: 'Domain Age', value: `${years} Years` });
+            details.push({ label: 'Umur Domain', value: `${years} Tahun` });
         }
         if (meta.registrar) details.push({ label: 'Registrar', value: meta.registrar });
     }
 
     // SSL
     if (signal.type.includes('ssl')) {
-        if (meta.issuer) details.push({ label: 'Issuer', value: meta.issuer.O || meta.issuer.CN });
+        if (meta.issuer) details.push({ label: 'Penerbit', value: meta.issuer.O || meta.issuer.CN });
         if (meta.validity) {
-            details.push({ label: 'Expires', value: meta.validity.not_after });
+            details.push({ label: 'Kadaluarsa', value: meta.validity.not_after });
         }
-        if (meta.protocol) details.push({ label: 'Protocol', value: meta.protocol });
+        if (meta.protocol) details.push({ label: 'Protokol', value: meta.protocol });
     }
 
     // Page Inspector
     if (signal.type.includes('page') || signal.type.includes('html')) {
-        if (meta.title) details.push({ label: 'Page Title', value: meta.title });
+        if (meta.title) details.push({ label: 'Judul Halaman', value: meta.title });
         if (meta.server) details.push({ label: 'Server', value: meta.server });
     }
 
     // Fallback if details are empty but it's a positive signal
     if (details.length === 0 && signal.impact === 'positive') {
-        details.push({ label: 'Verification', value: 'Passed automated checks' });
+        details.push({ label: 'Verifikasi', value: 'Lolos pemeriksaan otomatis' });
     }
 
     return details;
@@ -97,8 +97,8 @@ export default function Results({ scan }) {
                             <span className="text-4xl animate-pulse">🛡️</span>
                         </div>
                     </div>
-                    <h2 className="text-2xl font-bold text-white mb-2 tracking-widest uppercase font-mono">Initializing Deep Scan</h2>
-                    <p className="text-blue-400/60 font-mono text-xs uppercase tracking-wider"> querying cyber-intelligence databases...</p>
+                    <h2 className="text-2xl font-bold text-white mb-2 tracking-widest uppercase font-mono">Menginisialisasi Scan Mendalam</h2>
+                    <p className="text-blue-400/60 font-mono text-xs uppercase tracking-wider"> meminta data intelijen siber...</p>
                 </div>
             </div>
         );
@@ -113,19 +113,19 @@ export default function Results({ scan }) {
                     <div className="w-24 h-24 mx-auto mb-6 bg-red-900/20 rounded-full flex items-center justify-center border border-red-500/50 shadow-[0_0_30px_rgba(239,68,68,0.3)]">
                         <span className="text-5xl">⚠️</span>
                     </div>
-                    <h2 className="text-3xl font-bold text-red-500 mb-4 tracking-widest uppercase font-mono">Scan Termination</h2>
+                    <h2 className="text-3xl font-bold text-red-500 mb-4 tracking-widest uppercase font-mono">Pemindaian Gagal</h2>
                     <div className="bg-black/80 backdrop-blur border border-red-900/50 p-6 mb-8 text-left">
                         <p className="text-gray-400 font-mono text-sm mb-4">
-                            CRITICAL ERROR: The automated reconnaissance process encountered an unrecoverable exception.
+                            CRITICAL ERROR: Proses rekonesans otomatis mengalami kesalahan fatal.
                         </p>
                         <ul className="text-xs text-red-400 font-mono list-disc list-inside space-y-2">
-                            <li>Target host may be unreachable or offline.</li>
-                            <li>External intelligence feeds timed out.</li>
-                            <li>Internal processing error (Code: 0xDEADBEEF).</li>
+                            <li>Target host mungkin offline atau tidak dapat dijangkau.</li>
+                            <li>Feed intelijen eksternal timeout.</li>
+                            <li>Kesalahan pemrosesan internal (Code: 0xDEADBEEF).</li>
                         </ul>
                     </div>
                     <Link href="/" className="px-8 py-3 bg-red-600 hover:bg-red-700 text-black font-bold uppercase tracking-wider transition-all font-mono">
-                        Initiate New Scan
+                        Mulai Scan Baru
                     </Link>
                 </div>
             </div>
@@ -223,25 +223,25 @@ export default function Results({ scan }) {
                 {/* Header */}
                 <div className="border-b-4 border-black pb-6 mb-8 flex justify-between items-end">
                     <div>
-                        <h1 className="text-4xl font-black uppercase tracking-widest leading-none mb-2">Security<br />Report</h1>
-                        <p className="text-xs uppercase tracking-widest text-gray-600">Amangaknih.id Intelligence Unit</p>
+                        <h1 className="text-4xl font-black uppercase tracking-widest leading-none mb-2">Laporan<br />Keamanan</h1>
+                        <p className="text-xs uppercase tracking-widest text-gray-600">Unit Intelijen Amangaknih.id</p>
                     </div>
                     <div className="text-right text-[10px] leading-tight text-gray-800">
                         <p><strong>SCAN ID:</strong> #{scan.id}</p>
-                        <p><strong>DATE:</strong> {new Date().toLocaleDateString().toUpperCase()}</p>
+                        <p><strong>TANGGAL:</strong> {new Date().toLocaleDateString().toUpperCase()}</p>
                         <p><strong>TARGET:</strong> {host}</p>
                     </div>
                 </div>
 
                 {/* Executive Summary */}
                 <div className="mb-8">
-                    <h3 className="text-xs font-bold uppercase border-b-2 border-black mb-3 pb-1">01 // Executive Summary</h3>
+                    <h3 className="text-xs font-bold uppercase border-b-2 border-black mb-3 pb-1">01 // Ringkasan Eksekutif</h3>
                     <div className="bg-gray-100 p-4 border-l-4 border-black text-xs leading-relaxed text-justify text-black">
                         {scan.risk_level === 'safe'
-                            ? "The analyzed domain exhibits a LOW RISK profile. All primary security checkpoints—including SSL validity, domain reputation, and threat intelligence feeds—returned negative for malicious indicators. Standard security hygiene is observed."
+                            ? "Domain yang dianalisis menunjukkan profil RISIKO RENDAH. Semua pos pemeriksaan keamanan utama—termasuk validitas SSL, reputasi domain, dan feed intelijen ancaman—negatif terhadap indikator berbahaya. Higiene keamanan standar terpenuhi."
                             : scan.risk_level === 'suspicious'
-                                ? "The analyzed domain exhibits a NEUTRAL / UNKNOWN profile. Heuristics detected insufficient data or minor anomalies (e.g. new domain) but no critical threats. Caution is advised."
-                                : "CRITICAL ALERT: The analyzed domain exhibits a HIGH RISK profile. Confirmed malicious signatures or known phishing patterns were detected. Immediate access restriction is recommended."
+                                ? "Domain yang dianalisis menunjukkan profil NETRAL / TIDAK DIKETAHUI. Heuristik mendeteksi data yang tidak mencukupi atau anomali kecil (misalnya domain baru) tetapi tidak ada ancaman kritis. Disarankan berhati-hati."
+                                : "PERINGATAN KRITIS: Domain yang dianalisis menunjukkan profil RISIKO TINGGI. Tanda tangan berbahaya yang dikonfirmasi atau pola phishing yang diketahui terdeteksi. Pembatasan akses segera direkomendasikan."
                         }
                     </div>
                 </div>
@@ -250,32 +250,32 @@ export default function Results({ scan }) {
                 <div className="grid grid-cols-2 gap-6 mb-8">
                     <div className="border border-black p-6 flex flex-col items-center justify-center">
                         <span className="text-6xl font-black mb-2 text-black">{scan.final_score}</span>
-                        <span className="text-[10px] uppercase tracking-widest font-bold">Trust Score</span>
+                        <span className="text-[10px] uppercase tracking-widest font-bold">Skor Kepercayaan</span>
                     </div>
                     <div className="border border-black p-6 relative">
                         <div className="flex justify-between items-center mb-2 border-b border-gray-200 pb-2">
-                            <span className="text-[10px] font-bold uppercase">Passed Checks</span>
+                            <span className="text-[10px] font-bold uppercase">Cek Lolos</span>
                             <span className="font-bold text-lg text-black">{positiveSignals}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                            <span className="text-[10px] font-bold uppercase">Threats Found</span>
+                            <span className="text-[10px] font-bold uppercase">Ancaman Ditemukan</span>
                             <span className="font-bold text-lg text-black">{negativeSignals}</span>
                         </div>
                         <div className="absolute top-0 right-0 bg-black text-white text-[10px] px-2 py-1 uppercase font-bold">
-                            {scan.risk_level === 'dangerous' ? 'HIGH RISK' : scan.risk_level === 'suspicious' ? 'NEUTRAL / UNKNOWN' : 'LIKELY SAFE'}
+                            {scan.risk_level === 'dangerous' ? 'RISIKO TINGGI' : scan.risk_level === 'suspicious' ? 'NETRAL / TIDAK DIKETAHUI' : 'KEMUNGKINAN AMAN'}
                         </div>
                     </div>
                 </div>
 
                 {/* Detailed Findings */}
                 <div className="mb-8">
-                    <h3 className="text-xs font-bold uppercase border-b-2 border-black mb-3 pb-1">02 // Detailed Analysis Ledger</h3>
+                    <h3 className="text-xs font-bold uppercase border-b-2 border-black mb-3 pb-1">02 // Ledger Analisis Mendalam</h3>
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="border-b-2 border-black text-[9px] uppercase">
-                                <th className="py-2 w-24">Severity</th>
-                                <th className="py-2 w-48">Vector</th>
-                                <th className="py-2">Observation</th>
+                                <th className="py-2 w-24">Tingkat Keparahan</th>
+                                <th className="py-2 w-48">Vektor</th>
+                                <th className="py-2">Observasi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -295,17 +295,17 @@ export default function Results({ scan }) {
                 {/* Domain Info */}
                 <div className="grid grid-cols-2 gap-4 mb-8 text-[10px]">
                     <div>
-                        <h4 className="font-bold border-b border-gray-300 mb-2 uppercase">Registrar Information</h4>
-                        <p className="font-mono text-gray-800">{domainData.registrar || 'DATA REDACTED'}</p>
+                        <h4 className="font-bold border-b border-gray-300 mb-2 uppercase">Informasi Registrar</h4>
+                        <p className="font-mono text-gray-800">{domainData.registrar || 'DATA DISENSOR'}</p>
                     </div>
                     <div>
-                        <h4 className="font-bold border-b border-gray-300 mb-2 uppercase">Creation Date</h4>
-                        <p className="font-mono text-gray-800">{domainData.creation_date ? new Date(domainData.creation_date * 1000).toUTCString() : 'UNKNOWN'}</p>
+                        <h4 className="font-bold border-b border-gray-300 mb-2 uppercase">Tanggal Pembuatan</h4>
+                        <p className="font-mono text-gray-800">{domainData.creation_date ? new Date(domainData.creation_date * 1000).toUTCString() : 'TIDAK DIKETAHUI'}</p>
                     </div>
                 </div>
 
                 <div className="text-center pt-8 border-t border-gray-300 text-[8px] uppercase text-gray-500">
-                    Proprietary Automated Analysis • Generated by AmanGakNih.id • {new Date().getFullYear()}
+                    Analisis Otomatis Terproteksi • Dibuat oleh AmanGakNih.id • {new Date().getFullYear()}
                 </div>
             </div>
 
@@ -343,18 +343,18 @@ export default function Results({ scan }) {
                                 <h1 className="text-2xl md:text-3xl font-bold text-white break-all tracking-tight font-mono">
                                     {host}
                                 </h1>
-                                {scan.risk_level === 'safe' && <span className="px-3 py-1 bg-green-900/20 text-green-400 text-xs font-bold border border-green-500/30 tracking-widest uppercase font-mono">LIKELY SAFE</span>}
-                                {scan.risk_level === 'suspicious' && <span className="px-3 py-1 bg-yellow-900/20 text-yellow-400 text-xs font-bold border border-yellow-500/30 tracking-widest uppercase font-mono">NEUTRAL / UNKNOWN</span>}
-                                {scan.risk_level === 'dangerous' && <span className="px-3 py-1 bg-red-900/20 text-red-500 text-xs font-bold border border-red-500/50 tracking-widest uppercase animate-pulse font-mono">HIGH RISK</span>}
+                                {scan.risk_level === 'safe' && <span className="px-3 py-1 bg-green-900/20 text-green-400 text-xs font-bold border border-green-500/30 tracking-widest uppercase font-mono">KEMUNGKINAN AMAN</span>}
+                                {scan.risk_level === 'suspicious' && <span className="px-3 py-1 bg-yellow-900/20 text-yellow-400 text-xs font-bold border border-yellow-500/30 tracking-widest uppercase font-mono">NETRAL / TIDAK DIKETAHUI</span>}
+                                {scan.risk_level === 'dangerous' && <span className="px-3 py-1 bg-red-900/20 text-red-500 text-xs font-bold border border-red-500/50 tracking-widest uppercase animate-pulse font-mono">RISIKO TINGGI</span>}
                             </div>
                             <p className="text-blue-500/50 text-xs mt-2 font-mono uppercase tracking-wider">{scan.normalized_url}</p>
                         </div>
                         <div className="flex gap-3 w-full md:w-auto relative z-10">
                             <Link href="/" className="px-6 py-3 text-xs font-bold text-blue-400 bg-blue-900/10 hover:bg-blue-900/20 border border-blue-500/30 transition-all uppercase tracking-wider font-mono">
-                                New Scan
+                                Scan Baru
                             </Link>
                             <button onClick={() => window.print()} className="px-6 py-3 text-xs font-bold text-black bg-blue-600 hover:bg-blue-500 transition-all uppercase tracking-wider shadow-[0_0_15px_rgba(59,130,246,0.5)] font-mono">
-                                Export Report
+                                Ekspor Laporan
                             </button>
                         </div>
                     </div>
@@ -366,7 +366,7 @@ export default function Results({ scan }) {
 
                             {/* Trust Score Card */}
                             <div className="bg-black/80 backdrop-blur-md p-8 border border-blue-900/30 relative overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)] relative">
-                                <h3 className="text-blue-500 font-bold uppercase tracking-widest text-xs mb-8 text-center border-b border-blue-900/30 pb-4 font-mono">Security Trust Score</h3>
+                                <h3 className="text-blue-500 font-bold uppercase tracking-widest text-xs mb-8 text-center border-b border-blue-900/30 pb-4 font-mono">Skor Kepercayaan Keamanan</h3>
 
                                 <div className="relative w-56 h-56 mx-auto mb-8 flex items-center justify-center">
                                     {/* SVG Gauge */}
@@ -395,11 +395,11 @@ export default function Results({ scan }) {
                                 <div className="flex justify-between border-t border-blue-900/30 pt-6">
                                     <div className="text-center w-1/2 border-r border-blue-900/30">
                                         <span className="block text-2xl font-bold text-green-500 font-mono">{positiveSignals}</span>
-                                        <span className="text-[10px] text-gray-500 uppercase tracking-wider font-mono">Passed</span>
+                                        <span className="text-[10px] text-gray-500 uppercase tracking-wider font-mono">Lolos</span>
                                     </div>
                                     <div className="text-center w-1/2">
                                         <span className="block text-2xl font-bold text-red-500 font-mono">{negativeSignals}</span>
-                                        <span className="text-[10px] text-gray-500 uppercase tracking-wider font-mono">Issues</span>
+                                        <span className="text-[10px] text-gray-500 uppercase tracking-wider font-mono">Masalah</span>
                                     </div>
                                 </div>
                             </div>
@@ -408,8 +408,8 @@ export default function Results({ scan }) {
                             <div className="bg-blue-900/5 border border-blue-500/20 p-4 text-[10px] text-blue-300 font-mono leading-relaxed text-justify relative">
                                 <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-blue-500"></div>
                                 <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-blue-500"></div>
-                                This report is generated based on real-time heuristics and third-party threat intelligence.
-                                Scores are calculated using a weighted algorithm prioritizing SSL validity, domain reputation, and historical behavior.
+                                Laporan ini dibuat berdasarkan heuristik real-time dan intelijen ancaman pihak ketiga.
+                                Skor dihitung menggunakan algoritma tertimbang yang memprioritaskan validitas SSL, reputasi domain, dan perilaku historis.
                             </div>
 
                         </div>
@@ -420,16 +420,20 @@ export default function Results({ scan }) {
                             {/* Tab Switcher - Centered Top */}
                             <div className="flex justify-start tabs-container">
                                 <div className="flex gap-2">
-                                    {['overview', 'security', 'domain'].map((tab) => (
+                                    {[
+                                        { id: 'overview', label: 'IKHTISAR' },
+                                        { id: 'security', label: 'KEAMANAN' },
+                                        { id: 'domain', label: 'DOMAIN' }
+                                    ].map((tab) => (
                                         <button
-                                            key={tab}
-                                            onClick={() => setActiveTab(tab)}
-                                            className={`px-6 py-2 text-xs font-bold uppercase tracking-wider transition-all border font-mono ${activeTab === tab
+                                            key={tab.id}
+                                            onClick={() => setActiveTab(tab.id)}
+                                            className={`px-6 py-2 text-xs font-bold uppercase tracking-wider transition-all border font-mono ${activeTab === tab.id
                                                 ? 'bg-blue-600 text-black border-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.3)]'
                                                 : 'text-gray-500 hover:text-white border-white/10 hover:border-white/30 bg-white/5'
                                                 }`}
                                         >
-                                            {tab}
+                                            {tab.label}
                                         </button>
                                     ))}
                                 </div>
@@ -456,7 +460,7 @@ export default function Results({ scan }) {
                                                         <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-blue-400"></div>
 
                                                         <h4 className="text-white text-[10px] uppercase font-bold tracking-widest mb-3 border-b border-white/10 pb-2 font-mono flex items-center gap-2">
-                                                            <span className="text-blue-500">◈</span> Analysis Reasoning
+                                                            <span className="text-blue-500">◈</span> Alasan Analisis
                                                         </h4>
 
                                                         <div className="space-y-3">
@@ -469,12 +473,12 @@ export default function Results({ scan }) {
                                                                 </div>
                                                             ))}
                                                             {getSignalReasoning(hoveredSignal).length === 0 && (
-                                                                <p className="text-gray-600 italic text-[10px]">No additional metadata available.</p>
+                                                                <p className="text-gray-600 italic text-[10px]">Tidak ada metadata tambahan.</p>
                                                             )}
                                                         </div>
 
                                                         <div className="mt-4 pt-2 border-t border-white/10 text-[9px] text-gray-600 font-mono uppercase">
-                                                            ID: {hoveredSignal.id || 'SIG-000'} // W: {hoveredSignal.weight}
+                                                            ID: {hoveredSignal.id || 'SIG-000'} // B: {hoveredSignal.weight}
                                                         </div>
                                                     </div>
                                                 </motion.div>
@@ -482,7 +486,7 @@ export default function Results({ scan }) {
                                         </AnimatePresence>
 
                                         {scan.signals.length === 0 ? (
-                                            <div className="p-12 text-center text-gray-500 border border-dashed border-white/10 font-mono text-sm">NO SIGNALS DETECTED</div>
+                                            <div className="p-12 text-center text-gray-500 border border-dashed border-white/10 font-mono text-sm">TIDAK ADA SINYAL TERDETEKSI</div>
                                         ) : (
                                             scan.signals.sort((a, b) => b.weight - a.weight).map((signal, idx) => (
                                                 <motion.div
@@ -509,7 +513,7 @@ export default function Results({ scan }) {
                                                                         }`}>{signal.impact}</span>
                                                                 </div>
                                                                 <span className="text-[10px] text-gray-600 font-mono opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                    [DETAILS]
+                                                                    [DETAIL]
                                                                 </span>
                                                             </div>
                                                             <p className="text-gray-400 text-xs leading-relaxed font-mono group-hover:text-gray-300 transition-colors">{signal.description}</p>
@@ -528,20 +532,26 @@ export default function Results({ scan }) {
 
                                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-blue-900/30 pb-4">
                                             <h3 className="text-blue-400 font-bold flex items-center gap-3 text-xs uppercase tracking-wider font-mono shrink-0">
-                                                <span>🛡️</span> Threat Intelligence
+                                                <span>🛡️</span> Intelijen Ancaman
                                             </h3>
                                             {/* Inner Tab Switcher */}
                                             <div className="flex gap-1 overflow-x-auto max-w-full pb-2 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 no-scrollbar">
-                                                {['detection', 'details', 'relations', 'community', 'google sb'].map((tab) => (
+                                                {[
+                                                    { id: 'detection', label: 'DETEKSI' },
+                                                    { id: 'details', label: 'DETAIL' },
+                                                    { id: 'relations', label: 'RELASI' },
+                                                    { id: 'community', label: 'KOMUNITAS' },
+                                                    { id: 'google sb', label: 'GOOGLE SB' }
+                                                ].map((tab) => (
                                                     <button
-                                                        key={tab}
-                                                        onClick={() => setVtTab(tab)}
-                                                        className={`px-3 py-1 text-[10px] uppercase font-bold tracking-wider transition-all border font-mono whitespace-nowrap shrink-0 ${vtTab === tab
+                                                        key={tab.id}
+                                                        onClick={() => setVtTab(tab.id)}
+                                                        className={`px-3 py-1 text-[10px] uppercase font-bold tracking-wider transition-all border font-mono whitespace-nowrap shrink-0 ${vtTab === tab.id
                                                             ? 'bg-blue-600 text-black border-blue-600'
                                                             : 'text-gray-500 hover:text-white border-transparent hover:border-white/10'
                                                             }`}
                                                     >
-                                                        {tab}
+                                                        {tab.label}
                                                     </button>
                                                 ))}
                                             </div>
@@ -557,7 +567,7 @@ export default function Results({ scan }) {
                                                                 <span className={`font-bold text-[10px] font-mono uppercase ${result.category === 'malicious' ? 'text-red-500 animate-pulse' :
                                                                     result.category === 'suspicious' ? 'text-yellow-500' : 'text-green-500'
                                                                     }`}>
-                                                                    {result.result === 'clean' ? 'CLEAN' : result.result}
+                                                                    {result.result === 'clean' ? 'BERSIH' : result.result}
                                                                 </span>
                                                             </div>
                                                         ))}
@@ -565,8 +575,8 @@ export default function Results({ scan }) {
                                                 ) : (
                                                     <div className="text-center py-16 text-gray-500 border border-dashed border-white/10">
                                                         <p className="mb-2 text-3xl opacity-50">📡</p>
-                                                        <p className="uppercase tracking-widest text-xs font-mono">No vendor data available</p>
-                                                        <p className="text-[10px] mt-2 text-gray-600 font-mono">Ensure scanning is complete.</p>
+                                                        <p className="uppercase tracking-widest text-xs font-mono">Tidak ada data vendor tersedia</p>
+                                                        <p className="text-[10px] mt-2 text-gray-600 font-mono">Pastikan pemindaian selesai.</p>
                                                     </div>
                                                 )}
                                             </>
@@ -578,16 +588,16 @@ export default function Results({ scan }) {
                                                 {/* DNS Records */}
                                                 <div>
                                                     <h4 className="text-white text-[10px] uppercase font-bold tracking-widest mb-3 border-l-2 border-blue-500 pl-3 flex items-center gap-2">
-                                                        Last DNS Records <span className="text-gray-600 text-[9px]">({dnsRecords.length})</span>
+                                                        Catatan DNS Terakhir <span className="text-gray-600 text-[9px]">({dnsRecords.length})</span>
                                                     </h4>
                                                     {dnsRecords.length > 0 ? (
                                                         <div className="overflow-x-auto">
                                                             <table className="w-full text-left border-collapse font-mono text-[10px]">
                                                                 <thead>
                                                                     <tr className="border-b border-white/10 text-gray-500">
-                                                                        <th className="py-2 px-2">Type</th>
+                                                                        <th className="py-2 px-2">Tipe</th>
                                                                         <th className="py-2 px-2">TTL</th>
-                                                                        <th className="py-2 px-2">Value</th>
+                                                                        <th className="py-2 px-2">Nilai</th>
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody>
@@ -600,14 +610,14 @@ export default function Results({ scan }) {
                                                                     ))}
                                                                 </tbody>
                                                             </table>
-                                                            {dnsRecords.length > 5 && <p className="text-[9px] text-gray-600 mt-2 italic">Showing top 5 records...</p>}
+                                                            {dnsRecords.length > 5 && <p className="text-[9px] text-gray-600 mt-2 italic">Menampilkan 5 catatan teratas...</p>}
                                                         </div>
-                                                    ) : <p className="text-gray-600 text-[10px] italic bg-white/5 p-3">No DNS records available.</p>}
+                                                    ) : <p className="text-gray-600 text-[10px] italic bg-white/5 p-3">Tidak ada catatan DNS.</p>}
                                                 </div>
 
                                                 {/* HTTPS Certificate */}
                                                 <div>
-                                                    <h4 className="text-white text-[10px] uppercase font-bold tracking-widest mb-3 border-l-2 border-blue-500 pl-3">Last HTTPS Certificate</h4>
+                                                    <h4 className="text-white text-[10px] uppercase font-bold tracking-widest mb-3 border-l-2 border-blue-500 pl-3">Sertifikat HTTPS Terakhir</h4>
                                                     {sslCert ? (
                                                         <div className="bg-[#050505] p-4 border border-white/5 font-mono text-[10px] space-y-3">
 
@@ -621,7 +631,7 @@ export default function Results({ scan }) {
 
                                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                                 <div>
-                                                                    <span className="block text-gray-500 mb-1 font-bold">Subject</span>
+                                                                    <span className="block text-gray-500 mb-1 font-bold">Subjek</span>
                                                                     <div className="text-gray-300 pl-2 border-l border-white/10">
                                                                         <div className="grid grid-cols-[30px_1fr] gap-1">
                                                                             <span className="text-gray-600">CN:</span> <span className="text-white">{sslCert.subject?.CN}</span>
@@ -630,7 +640,7 @@ export default function Results({ scan }) {
                                                                     </div>
                                                                 </div>
                                                                 <div>
-                                                                    <span className="block text-gray-500 mb-1 font-bold">Issuer</span>
+                                                                    <span className="block text-gray-500 mb-1 font-bold">Penerbit</span>
                                                                     <div className="text-gray-300 pl-2 border-l border-white/10">
                                                                         <div className="grid grid-cols-[30px_1fr] gap-1">
                                                                             <span className="text-gray-600">CN:</span> <span className="text-white">{sslCert.issuer?.CN}</span>
@@ -642,11 +652,11 @@ export default function Results({ scan }) {
 
                                                             <div className="grid grid-cols-2 gap-4 pt-3 border-t border-white/5">
                                                                 <div>
-                                                                    <span className="text-gray-500 block">Valid From</span>
+                                                                    <span className="text-gray-500 block">Berlaku Dari</span>
                                                                     <span className="text-green-500">{sslCert.validity?.not_before}</span>
                                                                 </div>
                                                                 <div>
-                                                                    <span className="text-gray-500 block">Valid To</span>
+                                                                    <span className="text-gray-500 block">Berlaku Sampai</span>
                                                                     <span className="text-green-500">{sslCert.validity?.not_after}</span>
                                                                 </div>
                                                             </div>
@@ -656,7 +666,7 @@ export default function Results({ scan }) {
                                                                 <span className="text-gray-400 break-all text-[9px]">{sslCert.thumbprint_sha256}</span>
                                                             </div>
                                                         </div>
-                                                    ) : <p className="text-gray-600 text-[10px] italic bg-white/5 p-3">No certificate data available.</p>}
+                                                    ) : <p className="text-gray-600 text-[10px] italic bg-white/5 p-3">Tidak ada data sertifikat.</p>}
                                                 </div>
 
                                             </div>
@@ -665,7 +675,7 @@ export default function Results({ scan }) {
                                         {vtTab === 'relations' && (
                                             <div className="space-y-6">
                                                 <div>
-                                                    <h4 className="text-white text-[10px] uppercase font-bold tracking-widest mb-3 border-l-2 border-blue-500 pl-3">Popularity Ranks</h4>
+                                                    <h4 className="text-white text-[10px] uppercase font-bold tracking-widest mb-3 border-l-2 border-blue-500 pl-3">Peringkat Popularitas</h4>
                                                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                                                         {Object.entries(popularity).map(([source, rank]) => (
                                                             <div key={source} className="bg-white/5 p-2 px-3 border border-white/5 flex justify-between items-center">
@@ -673,7 +683,7 @@ export default function Results({ scan }) {
                                                                 <span className="text-blue-400 font-mono font-bold text-[10px]">#{rank.rank}</span>
                                                             </div>
                                                         ))}
-                                                        {Object.keys(popularity).length === 0 && <span className="text-gray-600 text-[10px] italic p-2">No popularity data.</span>}
+                                                        {Object.keys(popularity).length === 0 && <span className="text-gray-600 text-[10px] italic p-2">Tidak ada data popularitas.</span>}
                                                     </div>
                                                 </div>
 
@@ -681,10 +691,10 @@ export default function Results({ scan }) {
                                                     <div className="p-4 rounded-full bg-blue-900/10 text-blue-500 mb-2">
                                                         <svg className="w-8 h-8 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
                                                     </div>
-                                                    <h3 className="text-gray-400 font-bold uppercase tracking-widest text-xs">Relations Graph</h3>
+                                                    <h3 className="text-gray-400 font-bold uppercase tracking-widest text-xs">Grafik Relasi</h3>
                                                     <p className="text-gray-600 text-[10px] max-w-xs mx-auto">
-                                                        Deep relationship analysis (Passive DNS, Siblings) requires premium API access.
-                                                        Current plan is limited to snapshot data.
+                                                        Analisis hubungan mendalam (Passive DNS, Siblings) memerlukan akses API premium.
+                                                        Rencana saat ini terbatas pada data snapshot.
                                                     </p>
                                                 </div>
                                             </div>
@@ -693,36 +703,36 @@ export default function Results({ scan }) {
                                         {vtTab === 'community' && (
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                                 <div>
-                                                    <h4 className="text-white text-[10px] uppercase font-bold tracking-widest mb-4 border-l-2 border-blue-500 pl-3">Crowdsourced Voting</h4>
+                                                    <h4 className="text-white text-[10px] uppercase font-bold tracking-widest mb-4 border-l-2 border-blue-500 pl-3">Voting Komunitas</h4>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                         <div className="bg-green-900/10 border border-green-500/30 p-4 text-center">
                                                             <span className="block text-2xl font-bold text-green-500 font-mono">{votes.harmless || 0}</span>
-                                                            <span className="text-[10px] text-green-400 uppercase tracking-wider">Harmless</span>
+                                                            <span className="text-[10px] text-green-400 uppercase tracking-wider">Aman</span>
                                                         </div>
                                                         <div className="bg-red-900/10 border border-red-500/30 p-4 text-center">
                                                             <span className="block text-2xl font-bold text-red-500 font-mono">{votes.malicious || 0}</span>
-                                                            <span className="text-[10px] text-red-400 uppercase tracking-wider">Malicious</span>
+                                                            <span className="text-[10px] text-red-400 uppercase tracking-wider">Berbahaya</span>
                                                         </div>
                                                     </div>
                                                 </div>
 
                                                 <div>
-                                                    <h4 className="text-white text-[10px] uppercase font-bold tracking-widest mb-4 border-l-2 border-blue-500 pl-3">Submission History</h4>
+                                                    <h4 className="text-white text-[10px] uppercase font-bold tracking-widest mb-4 border-l-2 border-blue-500 pl-3">Riwayat Pengiriman</h4>
                                                     <div className="bg-white/5 p-4 border border-white/5 space-y-3 font-mono text-[10px]">
                                                         <div>
-                                                            <span className="block text-gray-500 mb-1">Last Submission</span>
+                                                            <span className="block text-gray-500 mb-1">Pengiriman Terakhir</span>
                                                             <span className="text-white">
                                                                 {submission.date
                                                                     ? new Date(submission.date * 1000).toUTCString()
-                                                                    : 'Unknown'}
+                                                                    : 'Tidak Diketahui'}
                                                             </span>
                                                         </div>
                                                         <div className="pt-3 border-t border-white/5">
-                                                            <span className="block text-gray-500 mb-1">Analysis Stats</span>
+                                                            <span className="block text-gray-500 mb-1">Statistik Analisis</span>
                                                             <div className="flex gap-4">
-                                                                <span className="text-red-500">Malicious: {vtData?.stats?.malicious || 0}</span>
-                                                                <span className="text-yellow-500">Suspicious: {vtData?.stats?.suspicious || 0}</span>
-                                                                <span className="text-green-500">Harmless: {vtData?.stats?.harmless || 0}</span>
+                                                                <span className="text-red-500">Berbahaya: {vtData?.stats?.malicious || 0}</span>
+                                                                <span className="text-yellow-500">Mencurigakan: {vtData?.stats?.suspicious || 0}</span>
+                                                                <span className="text-green-500">Aman: {vtData?.stats?.harmless || 0}</span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -744,19 +754,19 @@ export default function Results({ scan }) {
                                                     </div>
                                                     <div>
                                                         <h4 className="text-white font-bold uppercase tracking-wider text-xs">Google Safe Browsing</h4>
-                                                        <p className="text-gray-500 text-[10px]">Transparency Report & Threat Verification</p>
+                                                        <p className="text-gray-500 text-[10px]">Tinjauan Transparansi & Verifikasi Ancaman</p>
                                                     </div>
                                                 </div>
 
                                                 <div className="bg-[#050505] p-6 border border-white/10">
-                                                    <h5 className="text-gray-400 text-[10px] uppercase font-bold mb-4 tracking-widest">Verified Threat Intelligence Checks</h5>
+                                                    <h5 className="text-gray-400 text-[10px] uppercase font-bold mb-4 tracking-widest">Pemeriksaan Intelijen Ancaman Terverifikasi</h5>
                                                     <div className="space-y-3">
                                                         {gsbThreats.length > 0 ? (
                                                             gsbThreats.map((threat, i) => (
                                                                 <div key={i} className="flex items-center justify-between border-b border-white/5 pb-2 last:border-0 last:pb-0">
                                                                     <span className="text-gray-300 text-[10px] font-mono tracking-wide">{threat.replace(/_/g, ' ')}</span>
                                                                     <div className="flex items-center gap-2">
-                                                                        <span className="text-green-500 text-[10px] font-bold uppercase tracking-wider">Verified Safe</span>
+                                                                        <span className="text-green-500 text-[10px] font-bold uppercase tracking-wider">Terverifikasi Aman</span>
                                                                         <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
                                                                     </div>
                                                                 </div>
@@ -764,13 +774,13 @@ export default function Results({ scan }) {
                                                         ) : (
                                                             <div className="text-center text-gray-500 py-4 italic text-[10px] border border-dashed border-white/10">
                                                                 <p className="mb-2">⚠️</p>
-                                                                <p>No explicit threat checks returned.</p>
-                                                                <p className="text-[9px] mt-1">This usually means the API key is missing or the request failed.</p>
+                                                                <p>Tidak ada pemeriksaan ancaman eksplisit yang dikembalikan.</p>
+                                                                <p className="text-[9px] mt-1">Ini biasanya berarti kunci API hilang atau permintaan gagal.</p>
                                                             </div>
                                                         )}
                                                     </div>
                                                     <div className="mt-6 p-3 bg-blue-900/10 border border-blue-500/20 text-[9px] text-blue-400 text-center font-mono">
-                                                        Authenticated via Google Safe Browsing API v4
+                                                        Diautentikasi melalui Google Safe Browsing API v4
                                                     </div>
                                                 </div>
                                             </div>
@@ -786,29 +796,29 @@ export default function Results({ scan }) {
 
                                         <div>
                                             <h3 className="text-blue-400 font-bold mb-6 flex items-center gap-3 text-xs uppercase tracking-wider border-b border-blue-900/30 pb-4 font-mono">
-                                                <span>🌐</span> Domain Reconnaissance
+                                                <span>🌐</span> Rekognisi Domain
                                             </h3>
 
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 <div className="bg-white/5 p-4 border-l-2 border-l-blue-500 border border-white/5">
-                                                    <span className="text-gray-500 text-[10px] uppercase tracking-widest font-bold block mb-1 font-mono">Creation Date</span>
+                                                    <span className="text-gray-500 text-[10px] uppercase tracking-widest font-bold block mb-1 font-mono">Tanggal Pembuatan</span>
                                                     <span className="text-white text-sm font-mono">
                                                         {domainData.creation_date
-                                                            ? new Date(domainData.creation_date * 1000).toLocaleDateString(undefined, { dateStyle: 'medium' })
-                                                            : 'UNKNOWN / HIDDEN'
+                                                            ? new Date(domainData.creation_date * 1000).toLocaleDateString('id-ID', { dateStyle: 'medium' })
+                                                            : 'TIDAK DIKETAHUI / TERSEMBUNYI'
                                                         }
                                                     </span>
                                                 </div>
 
                                                 <div className="bg-white/5 p-4 border-l-2 border-l-blue-500 border border-white/5">
-                                                    <span className="text-gray-500 text-[10px] uppercase tracking-widest font-bold block mb-1 font-mono">Registrar</span>
+                                                    <span className="text-gray-500 text-[10px] uppercase tracking-widest font-bold block mb-1 font-mono">Pendaftar</span>
                                                     <span className="text-white text-sm font-mono truncate block" title={domainData.registrar}>
-                                                        {domainData.registrar || 'UNKNOWN'}
+                                                        {domainData.registrar || 'TIDAK DIKETAHUI'}
                                                     </span>
                                                 </div>
 
                                                 <div className="bg-white/5 p-4 border border-white/5 md:col-span-2">
-                                                    <span className="text-gray-500 text-[10px] uppercase tracking-widest font-bold block mb-3 font-mono">Reputation Tags</span>
+                                                    <span className="text-gray-500 text-[10px] uppercase tracking-widest font-bold block mb-3 font-mono">Tag Reputasi</span>
                                                     <div className="flex flex-wrap gap-2">
                                                         {Object.keys(domainData.categories || {}).length > 0 ?
                                                             Object.keys(domainData.categories).map(cat => (
@@ -816,7 +826,7 @@ export default function Results({ scan }) {
                                                                     {domainData.categories[cat]}
                                                                 </span>
                                                             ))
-                                                            : <span className="text-gray-600 text-xs italic font-mono">No specific categories tags found.</span>}
+                                                            : <span className="text-gray-600 text-xs italic font-mono">Tidak ada tag kategori khusus ditemukan.</span>}
                                                     </div>
                                                 </div>
                                             </div>
@@ -831,17 +841,17 @@ export default function Results({ scan }) {
 
                     <div className="mt-12 pt-8 border-t border-white/5 text-center no-print">
                         <div className="max-w-3xl mx-auto bg-blue-900/10 border border-blue-500/20 p-4 rounded mb-6">
-                            <h4 className="text-blue-400 font-bold uppercase tracking-widest text-[10px] mb-2 font-mono">⚠️ FAIRNESS & ACCURACY NOTICE</h4>
+                            <h4 className="text-blue-400 font-bold uppercase tracking-widest text-[10px] mb-2 font-mono">⚠️ PEMBERITAHUAN KEADILAN & AKURASI</h4>
                             <p className="text-[10px] text-gray-400 uppercase tracking-wide font-mono leading-relaxed">
-                                This automated safety score is based on available public data and heuristics.
-                                A <strong>"Safe"</strong> result does not guarantee the site is 100% secure, and a <strong>"Suspicious"</strong> result does not automatically mean the site is malicious (it may just be new or lesser-known).
+                                Skor keamanan otomatis ini didasarkan pada data publik dan heuristik yang tersedia.
+                                Hasil <strong>"Aman"</strong> tidak menjamin situs 100% aman, dan hasil <strong>"Mencurigakan"</strong> tidak otomatis berarti situs tersebut berbahaya (mungkin hanya baru atau kurang dikenal).
                                 <br /><br />
-                                <strong>Please use your own judgment.</strong> Do not rely solely on this tool for critical security decisions.
+                                <strong>Harap gunakan penilaian Anda sendiri.</strong> Jangan hanya mengandalkan alat ini untuk keputusan keamanan kritis.
                             </p>
                         </div>
                         <p className="text-[10px] text-gray-600 max-w-2xl mx-auto uppercase tracking-wider font-mono">
-                            <strong>Security Disclaimer:</strong> Analysis provided for informational purposes only.
-                            Automated heuristics may produce false positives. Always verify critical indicators manually.
+                            <strong>Penafian Keamanan:</strong> Analisis disediakan hanya untuk tujuan informasi.
+                            Heuristik otomatis mungkin menghasilkan positif palsu. Selalu verifikasi indikator kritis secara manual.
                         </p>
                     </div>
                 </motion.div>

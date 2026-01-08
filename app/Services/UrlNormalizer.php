@@ -28,6 +28,14 @@ class UrlNormalizer
 
         $host = strtolower($parsed['host']);
 
+        // Convert Punycode (IDN) to ASCII for consistent storage
+        if (function_exists('idn_to_ascii')) {
+            $asciiHost = idn_to_ascii($host, IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46);
+            if ($asciiHost !== false) {
+                $host = $asciiHost;
+            }
+        }
+
         // Reject IP addresses (IPv4)
         if (filter_var($host, FILTER_VALIDATE_IP)) {
             throw new \InvalidArgumentException('Scan IP address tidak didukung via web ini.');
@@ -41,7 +49,16 @@ class UrlNormalizer
         // Rebuild URL to ensure clean format
         $scheme = isset($parsed['scheme']) ? strtolower($parsed['scheme']) : 'https';
         $path = $parsed['path'] ?? '/';
-        $query = isset($parsed['query']) ? '?' . $parsed['query'] : '';
+
+        // Sanitize query string: strip potentially dangerous params but keep tracking params
+        $query = '';
+        if (isset($parsed['query'])) {
+            // Limit query string length to prevent abuse
+            $safeQuery = substr($parsed['query'], 0, 500);
+            // Remove any null bytes or control characters
+            $safeQuery = preg_replace('/[\x00-\x1F\x7F]/', '', $safeQuery);
+            $query = '?' . $safeQuery;
+        }
 
         return "{$scheme}://{$host}{$path}{$query}";
     }

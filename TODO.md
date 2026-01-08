@@ -18,14 +18,14 @@
 ## 2. 🛡️ Security Hardening & Attack Prevention
 **Goal**: Fortify the application against abuse, bots, and common web vulnerabilities.
 
-- [ ] **Rate Limiting**:
+- [X] **Rate Limiting**:
     - Implement granular throttling per IP (e.g., 5 scans per minute) using middleware.
     - Add special limits for "Expensive" APIs like VirusTotal.
 - [ ] **Bot Protection**:
     - Integrate **Cloudflare Turnstile** or **Google reCAPTCHA v3** on submission forms.
-- [ ] **HTTP Security Headers**:
+- [x] **HTTP Security Headers**:
     - Configure Content-Security-Policy (CSP), Strict-Transport-Security (HSTS), and X-Content-Type-Options.
-- [ ] **Input Sanitization**:
+- [x] **Input Sanitization**:
     - Audit all user inputs for XSS vectors.
     - Normalize input data to prevent bypass techniques.
 
